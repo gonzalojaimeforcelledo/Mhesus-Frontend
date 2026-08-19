@@ -33,7 +33,10 @@
                 { "type": "anyComponentStyle", "maximumWarning": "8kb", "maximumError": "16kb" }
               ],
               "outputHashing": "all",
-              "optimization": { "fonts": false }
+              "optimization": { "fonts": false },
+              "fileReplacements": [
+                { "replace": "src/environments/environment.ts", "with": "src/environments/environment.prod.ts" }
+              ]
             },
             "development": {
               "optimization": false,
@@ -54,8 +57,5 @@
         }
       }
     }
-  },
-  "cli": {
-    "analytics": false
   }
 }

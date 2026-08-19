@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { NOMBRE_ROL } from '../../core/services/permissions';
 
 @Component({
@@ -11,6 +12,18 @@ import { NOMBRE_ROL } from '../../core/services/permissions';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="min-h-screen grid lg:grid-cols-2 bg-ink-50">
+      <!-- Tema claro / oscuro -->
+      <button
+        type="button" (click)="theme.alternar()" title="Cambiar tema"
+        class="fixed top-4 right-4 z-10 p-2 rounded-lg text-ink-500 bg-surface border border-ink-100 hover:text-navy-700 shadow-sm"
+      >
+        @if (theme.esOscuro()) {
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        } @else {
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        }
+      </button>
+
       <!-- Panel de marca -->
       <div class="relative hidden lg:flex flex-col justify-between bg-navy-900 text-white p-12 overflow-hidden">
         <img src="assets/logo-wings.png" alt="" class="absolute -right-20 -top-16 w-[640px] opacity-[0.10] pointer-events-none select-none" />
@@ -99,28 +112,40 @@ import { NOMBRE_ROL } from '../../core/services/permissions';
           </div>
         </div>
       </div>
+
+      <!-- Aviso de cookies -->
+      @if (!cookiesAceptadas()) {
+        <div class="fixed inset-x-0 bottom-0 z-20 bg-navy-900 text-white px-5 py-4 sm:px-8 flex flex-col sm:flex-row items-center gap-4">
+          <p class="text-sm text-wing-100/80 flex-1">
+            Usamos cookies para mantener tu sesión activa y recordar tus preferencias (como el tema claro/oscuro). Al continuar, aceptas su uso.
+          </p>
+          <button type="button" (click)="aceptarCookies()" class="bg-white text-navy-900 text-sm font-medium rounded-lg px-4 py-2 whitespace-nowrap shrink-0">Aceptar</button>
+        </div>
+      }
     </div>
   `
 })
 export class LoginComponent implements OnDestroy {
   private static readonly CLAVE_ULTIMO_USUARIO = 'mhesus:ultimoUsuarioLogin';
+  private static readonly CLAVE_COOKIES = 'mhesus:cookiesAceptadas';
 
   usuario = '';
   password = '';
   error = signal<string | null>(null);
   cerradaPorInactividad = signal(false);
   bloqueadoHasta = signal<number | null>(null);
+  cookiesAceptadas = signal(localStorage.getItem(LoginComponent.CLAVE_COOKIES) === 'true');
   private ahora = signal(Date.now());
   private intervalo?: ReturnType<typeof setInterval>;
 
-  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
+  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute, public theme: ThemeService) {
     this.cerradaPorInactividad.set(this.route.snapshot.queryParamMap.get('motivo') === 'inactividad');
     this.intervalo = setInterval(() => this.ahora.set(Date.now()), 1000);
 
-    // Si al recargar la página el último usuario que intentó entrar sigue bloqueado,
-    // restauramos el campo y el contador en vivo automáticamente (el bloqueo en sí
-    // ya persiste en AuthService; esto solo evita que la cuenta regresiva "desaparezca"
-    // visualmente al refrescar).
+    // Si al recargar la página el último usuario que intentó entrar sigue bloqueado
+    // (el backend es quien decide esto de verdad — ver AuthService.estadoBloqueo),
+    // restauramos el campo y el contador en vivo automáticamente, para que la cuenta
+    // regresiva no "desaparezca" visualmente al refrescar.
     const ultimoUsuario = localStorage.getItem(LoginComponent.CLAVE_ULTIMO_USUARIO);
     if (ultimoUsuario) {
       this.usuario = ultimoUsuario;
@@ -130,6 +155,11 @@ export class LoginComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.intervalo) clearInterval(this.intervalo);
+  }
+
+  aceptarCookies(): void {
+    localStorage.setItem(LoginComponent.CLAVE_COOKIES, 'true');
+    this.cookiesAceptadas.set(true);
   }
 
   bloqueado(): boolean {
@@ -152,8 +182,8 @@ export class LoginComponent implements OnDestroy {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  onUsuarioChange(): void {
-    const hasta = this.auth.estadoBloqueo(this.usuario);
+  async onUsuarioChange(): Promise<void> {
+    const hasta = await this.auth.estadoBloqueo(this.usuario);
     this.bloqueadoHasta.set(hasta);
     if (hasta) {
       localStorage.setItem(LoginComponent.CLAVE_ULTIMO_USUARIO, this.usuario.trim());

@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Rajdhani — servida local con los archivos de la marca (títulos y botones) */
+@font-face {
+  font-family: 'Rajdhani';
+  src: url('/assets/fonts/rajdhani_light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Rajdhani';
+  src: url('/assets/fonts/rajdhani_semibold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Rajdhani';
+  src: url('/assets/fonts/rajdhani_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Primitive (colores de marca — no cambian con el tema) */
   --color-navy-900: #0B0B6B;
@@ -70,7 +93,14 @@ body { -webkit-font-smoothing: antialiased; }
   transition: background-color 550ms ease-in-out, border-color 550ms ease-in-out, color 350ms ease-in-out, fill 350ms ease-in-out, stroke 350ms ease-in-out, box-shadow 550ms ease-in-out;
 }
 
-h1, h2, h3, h4, .font-display { font-family: 'Barlow', sans-serif; letter-spacing: 0.005em; }
+h1, h2, h3, h4, .font-display { font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.005em; }
+
+/* Botones: Rajdhani 700, como los títulos — mismo look llamativo para las acciones */
+button, .btn, input[type="submit"], input[type="button"] {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
 
 /* Los campos de formulario no heredan el fondo/color del tema por defecto del navegador
    (siempre aparecen blancos con texto negro): forzamos que usen las variables del tema

@@ -61,7 +61,7 @@ const NAV: NavItem[] = [
               [routerLink]="item.ruta" routerLinkActive="bg-white/10 text-white"
               [routerLinkActiveOptions]="{ exact: item.ruta === '/inicio' }"
               (click)="mobileAbierto.set(false)"
-              class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-wing-100/80 hover:bg-white/5 hover:text-white transition-colors"
+              class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-wing-100/80 hover:bg-white/5 hover:text-white transition-colors"
               [title]="etiquetaNav(item)"
             >
               <svg viewBox="0 0 24 24" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -74,7 +74,7 @@ const NAV: NavItem[] = [
 
         <button
           type="button" (click)="salir()"
-          class="flex items-center gap-3 px-3 mx-2 mb-1 py-2.5 rounded-lg text-sm text-wing-100/80 hover:bg-white/5 hover:text-white transition-colors"
+          class="flex items-center gap-3 px-3 mx-2 mb-1 py-2.5 rounded-lg text-sm font-medium text-wing-100/80 hover:bg-white/5 hover:text-white transition-colors"
         >
           <svg viewBox="0 0 24 24" class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1M10 12h11m0 0-3-3m3 3-3 3"/></svg>
           @if (!colapsado() || mobileAbierto()) { <span class="truncate">Cerrar sesión</span> }

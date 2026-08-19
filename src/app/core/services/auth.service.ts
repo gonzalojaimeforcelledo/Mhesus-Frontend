@@ -9,14 +9,14 @@ interface SesionActiva {
   expiraEn: number; // epoch ms — se renueva con cada actividad del usuario
 }
 
-interface EstadoIntentos {
-  intentos: number;
-  bloqueadoHasta: number | null; // epoch ms
-}
-
 interface LoginResponse {
   token: string;
   usuario: Usuario;
+}
+
+interface LoginErrorResponse {
+  mensaje?: string;
+  bloqueadoHasta?: number | null;
 }
 
 /**
@@ -27,17 +27,14 @@ interface LoginResponse {
  * sesión se cierra por seguridad aunque el JWT del backend siga siendo válido
  * (ver ShellComponent, que detecta la inactividad real y llama a renovarSesion()).
  *
- * También lleva un control de intentos fallidos por usuario en el propio navegador:
- * al tercer intento incorrecto seguido, ese usuario queda bloqueado 5 minutos antes
- * de poder volver a intentar (persistido, sobrevive a recargar la página). Esto es
- * una capa de UX adicional — la validación real de credenciales siempre la hace el backend.
+ * El control de intentos fallidos (3 intentos, bloqueo de 5 minutos) lo maneja
+ * el BACKEND, no el navegador — se guarda en la base de datos (tabla
+ * intentos_login), así que sigue vigente aunque el backend se reinicie y no
+ * se puede saltar limpiando el localStorage del navegador.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   static readonly SESION_INACTIVIDAD_MS = 5 * 60 * 1000;
-  static readonly MAX_INTENTOS = 3;
-  static readonly BLOQUEO_MS = 5 * 60 * 1000;
-  private static readonly CLAVE_INTENTOS = 'mhesus:intentosLogin';
 
   private usuarioActual = signal<Usuario | null>(null);
   readonly usuario = computed(() => this.usuarioActual());
@@ -59,55 +56,21 @@ export class AuthService {
     }
   }
 
-  private leerIntentos(): Record<string, EstadoIntentos> {
-    try {
-      return JSON.parse(localStorage.getItem(AuthService.CLAVE_INTENTOS) ?? '{}');
-    } catch {
-      return {};
-    }
-  }
-
-  private guardarIntentos(mapa: Record<string, EstadoIntentos>): void {
-    localStorage.setItem(AuthService.CLAVE_INTENTOS, JSON.stringify(mapa));
-  }
-
-  /** Milisegundos epoch hasta los que sigue bloqueado ese usuario, o null si puede intentar. Ya limpia bloqueos vencidos. */
-  estadoBloqueo(usuario: string): number | null {
-    const clave = usuario.trim().toLowerCase();
+  /** Milisegundos epoch hasta los que sigue bloqueado ese usuario, o null si puede intentar — se consulta al backend. */
+  async estadoBloqueo(usuario: string): Promise<number | null> {
+    const clave = usuario.trim();
     if (!clave) return null;
-    const mapa = this.leerIntentos();
-    const estado = mapa[clave];
-    if (!estado?.bloqueadoHasta) return null;
-    if (estado.bloqueadoHasta <= Date.now()) {
-      delete mapa[clave];
-      this.guardarIntentos(mapa);
+    try {
+      const res = await this.api.get<{ bloqueadoHasta: number | null }>('/auth/estado-bloqueo', { usuario: clave });
+      return res.bloqueadoHasta ?? null;
+    } catch {
       return null;
     }
-    return estado.bloqueadoHasta;
   }
 
   async login(usuario: string, password: string): Promise<{ ok: boolean; error?: string; bloqueadoHasta?: number }> {
-    const clave = usuario.trim().toLowerCase();
-    const bloqueadoHasta = this.estadoBloqueo(usuario);
-    if (bloqueadoHasta) {
-      const minutos = Math.ceil((bloqueadoHasta - Date.now()) / 60000);
-      return {
-        ok: false,
-        bloqueadoHasta,
-        error: `Demasiados intentos fallidos. Vuelve a intentar en ${minutos} minuto${minutos === 1 ? '' : 's'}.`
-      };
-    }
-
-    const mapa = this.leerIntentos();
-
     try {
       const res = await this.api.post<LoginResponse>('/auth/login', { usuario, password });
-
-      if (mapa[clave]) {
-        delete mapa[clave];
-        this.guardarIntentos(mapa);
-      }
-
       this.tokenService.guardar(res.token);
       this.usuarioActual.set(res.usuario);
       this.storage.set('usuarioActual', res.usuario);
@@ -115,19 +78,10 @@ export class AuthService {
       this.storage.set('sesion', sesion);
       return { ok: true };
     } catch (err) {
-      const intentosPrevios = mapa[clave]?.intentos ?? 0;
-      const intentos = intentosPrevios + 1;
-      if (intentos >= AuthService.MAX_INTENTOS) {
-        const hasta = Date.now() + AuthService.BLOQUEO_MS;
-        mapa[clave] = { intentos: 0, bloqueadoHasta: hasta };
-        this.guardarIntentos(mapa);
-        return { ok: false, bloqueadoHasta: hasta, error: 'Demasiados intentos fallidos. Acceso bloqueado por 5 minutos.' };
-      }
-      mapa[clave] = { intentos, bloqueadoHasta: null };
-      this.guardarIntentos(mapa);
-      const restantes = AuthService.MAX_INTENTOS - intentos;
-      const mensajeBase = mensajeDeError(err, 'Usuario o contraseña incorrectos.');
-      return { ok: false, error: `${mensajeBase} Te queda${restantes === 1 ? '' : 'n'} ${restantes} intento${restantes === 1 ? '' : 's'}.` };
+      const anyErr = err as { error?: LoginErrorResponse };
+      const bloqueadoHasta = anyErr?.error?.bloqueadoHasta ?? undefined;
+      const mensaje = mensajeDeError(err, 'Usuario o contraseña incorrectos.');
+      return { ok: false, error: mensaje, bloqueadoHasta };
     }
   }
 

@@ -44,8 +44,8 @@ module.exports = {
         }
       },
       fontFamily: {
-        display: ["Barlow", "sans-serif"],
-        body: ["Barlow", "sans-serif"],
+        display: ["Rajdhani", "sans-serif"],
+        body: ["\"Roboto Condensed\"", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"]
       },
       boxShadow: {

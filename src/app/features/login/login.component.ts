@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { NOMBRE_ROL } from '../../core/services/permissions';
 
 @Component({
   selector: 'app-login',
@@ -73,13 +72,31 @@ import { NOMBRE_ROL } from '../../core/services/permissions';
             </div>
             <div>
               <label class="text-sm font-medium text-ink-700">Contraseña</label>
-              <input
-                type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required
-                [disabled]="bloqueado()"
-                class="mt-1 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm outline-none focus:border-navy-500 disabled:opacity-50"
-                placeholder="••••••••"
-              />
+              <div class="relative mt-1">
+                <input
+                  [type]="verPassword() ? 'text' : 'password'" [(ngModel)]="password" name="password" autocomplete="current-password" required
+                  [disabled]="bloqueado()"
+                  class="w-full rounded-lg border border-ink-100 bg-surface pl-3 pr-10 py-2.5 text-sm outline-none focus:border-navy-500 disabled:opacity-50"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button" (click)="verPassword.set(!verPassword())" tabindex="-1"
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
+                  [title]="verPassword() ? 'Ocultar contraseña' : 'Ver contraseña'"
+                >
+                  @if (verPassword()) {
+                    <svg viewBox="0 0 24 24" class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.5A10.4 10.4 0 0 1 12 5c5 0 9 4 10.5 7-.6 1.2-1.5 2.5-2.7 3.6M6.3 6.3C4.2 7.6 2.7 9.4 1.5 12 3 15 7 19 12 19c1.2 0 2.4-.2 3.5-.6"/></svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  }
+                </button>
+              </div>
             </div>
+
+            <label class="flex items-center gap-2 text-sm text-ink-500 cursor-pointer select-none">
+              <input type="checkbox" [(ngModel)]="recordarme" name="recordarme" class="rounded border-ink-100 accent-navy-700" />
+              Recordar mi usuario en este dispositivo
+            </label>
 
             @if (bloqueado()) {
               <p class="text-sm text-amber-600 bg-amber-400/10 border border-amber-400/30 rounded-lg px-3 py-2.5 flex items-center gap-2">
@@ -95,21 +112,7 @@ import { NOMBRE_ROL } from '../../core/services/permissions';
             </button>
           </form>
 
-          <div class="mt-8 border-t border-ink-100 pt-5">
-            <p class="text-xs font-medium text-ink-500 mb-2">Accesos rápidos por rol (clic para autocompletar usuario)</p>
-            <div class="grid grid-cols-2 gap-2">
-              @for (u of usuariosDemo(); track u.usuario) {
-                <button
-                  type="button" (click)="usarDemo(u.usuario)"
-                  class="text-left rounded-lg border border-ink-100 hover:border-navy-500 hover:bg-wing-100/40 px-3 py-2 transition-colors"
-                >
-                  <p class="text-xs font-medium text-ink-900">{{ nombreRol(u.rol) }}</p>
-                  <p class="text-[11px] text-ink-500 font-mono">{{ u.usuario }}</p>
-                </button>
-              }
-            </div>
-            <p class="text-[11px] text-ink-300 mt-2">Contraseña de demostración: <span class="font-mono">demo1234</span></p>
-          </div>
+          <p class="text-[11px] text-ink-300 mt-6 text-center">Contraseña de demostración: <span class="font-mono">demo1234</span></p>
         </div>
       </div>
 
@@ -127,10 +130,13 @@ import { NOMBRE_ROL } from '../../core/services/permissions';
 })
 export class LoginComponent implements OnDestroy {
   private static readonly CLAVE_ULTIMO_USUARIO = 'mhesus:ultimoUsuarioLogin';
+  private static readonly CLAVE_RECORDADO = 'mhesus:usuarioRecordado';
   private static readonly CLAVE_COOKIES = 'mhesus:cookiesAceptadas';
 
   usuario = '';
   password = '';
+  recordarme = false;
+  verPassword = signal(false);
   error = signal<string | null>(null);
   cerradaPorInactividad = signal(false);
   bloqueadoHasta = signal<number | null>(null);
@@ -141,6 +147,14 @@ export class LoginComponent implements OnDestroy {
   constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute, public theme: ThemeService) {
     this.cerradaPorInactividad.set(this.route.snapshot.queryParamMap.get('motivo') === 'inactividad');
     this.intervalo = setInterval(() => this.ahora.set(Date.now()), 1000);
+
+    // "Recordarme": si el usuario lo activó antes, precargamos su nombre de usuario
+    // (nunca la contraseña — eso queda a criterio del gestor de contraseñas del navegador).
+    const recordado = localStorage.getItem(LoginComponent.CLAVE_RECORDADO);
+    if (recordado) {
+      this.usuario = recordado;
+      this.recordarme = true;
+    }
 
     // Si al recargar la página el último usuario que intentó entrar sigue bloqueado
     // (el backend es quien decide esto de verdad — ver AuthService.estadoBloqueo),
@@ -192,28 +206,6 @@ export class LoginComponent implements OnDestroy {
     }
   }
 
-  /** Lista fija (no viene del backend: antes de iniciar sesión no hay token para pedir /usuarios) — coincide con los usuarios de demostración sembrados en el backend. */
-  usuariosDemo(): { usuario: string; rol: keyof typeof NOMBRE_ROL }[] {
-    return [
-      { usuario: 'recepcion', rol: 'recepcion' },
-      { usuario: 'mecanico', rol: 'mecanico' },
-      { usuario: 'mecanico2', rol: 'mecanico' },
-      { usuario: 'almacen', rol: 'almacen' },
-      { usuario: 'jefe', rol: 'jefe_taller' },
-      { usuario: 'admin', rol: 'administracion' }
-    ];
-  }
-
-  nombreRol(rol: keyof typeof NOMBRE_ROL) {
-    return NOMBRE_ROL[rol];
-  }
-
-  usarDemo(usuario: string): void {
-    this.usuario = usuario;
-    this.password = 'demo1234';
-    this.onUsuarioChange();
-  }
-
   async ingresar(): Promise<void> {
     if (this.bloqueado()) return;
     const res = await this.auth.login(this.usuario.trim(), this.password);
@@ -227,6 +219,11 @@ export class LoginComponent implements OnDestroy {
     }
     this.error.set(null);
     localStorage.removeItem(LoginComponent.CLAVE_ULTIMO_USUARIO);
+    if (this.recordarme) {
+      localStorage.setItem(LoginComponent.CLAVE_RECORDADO, this.usuario.trim());
+    } else {
+      localStorage.removeItem(LoginComponent.CLAVE_RECORDADO);
+    }
     this.router.navigateByUrl('/inicio');
   }
 }

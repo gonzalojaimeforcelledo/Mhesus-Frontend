@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Primitive (colores de marca — no cambian con el tema) */
+  --color-navy-900: #0B0B6B;
+  --color-navy-700: #14149C;
+  --color-navy-500: #3A44C9;
+  --color-wing-300: #B8D4FF;
+  --color-wing-100: #EAF1FF;
+  --color-amber-400: #F2A93B;
+  --color-emerald-500: #1FA971;
+  --color-crimson-500: #E5484D;
+
+  /* Escala neutra "ink" — como tripletas RGB para admitir modificadores de opacidad (/50, /60, etc.)
+     y para poder redefinirse por completo dentro de .dark sin tocar ninguna plantilla. */
+  --c-ink-900: 18 20 28;
+  --c-ink-700: 43 46 59;
+  --c-ink-500: 91 95 112;
+  --c-ink-300: 155 160 179;
+  --c-ink-100: 227 229 238;
+  --c-ink-50: 246 247 251;
+  --c-surface: 255 255 255;
+
+  /* Texto/enlaces con color de marca: distinto de --color-navy-* (que son fondos
+     siempre oscuros, como el sidebar) porque este SÍ debe aclararse en modo oscuro
+     para mantener contraste legible sobre superficies oscuras. */
+  --c-brand-700: 20 20 156;
+  --c-brand-900: 11 11 107;
+
+  /* Semantic */
+  --color-primary: var(--color-navy-700);
+  --color-primary-dark: var(--color-navy-900);
+  --color-accent: var(--color-wing-300);
+  --color-bg: rgb(var(--c-ink-50));
+  --color-surface: rgb(var(--c-surface));
+  --color-border: rgb(var(--c-ink-100));
+  --color-text: rgb(var(--c-ink-900));
+  --color-text-muted: rgb(var(--c-ink-500));
+  --color-warning: var(--color-amber-400);
+  --color-success: var(--color-emerald-500);
+  --color-danger: var(--color-crimson-500);
+}
+
+/* Modo oscuro: se activa con la clase .dark en <html> (ver ThemeService).
+   Al ser la escala "ink" la que se usa para casi todo el texto/fondo/bordes neutros
+   de la app, invertirla aquí adapta automáticamente la enorme mayoría de la interfaz
+   sin necesidad de variantes dark: repartidas por cada plantilla. */
+.dark {
+  --c-ink-900: 237 239 245;
+  --c-ink-700: 205 208 218;
+  --c-ink-500: 150 155 171;
+  --c-ink-300: 100 105 123;
+  --c-ink-100: 47 51 68;
+  --c-ink-50: 18 20 30;
+  --c-surface: 26 29 41;
+  --c-brand-700: 138 165 255;
+  --c-brand-900: 179 202 255;
+}
+
+html, body { height: 100%; }
+body { -webkit-font-smoothing: antialiased; }
+
+/* Transición tipo "amanecer/atardecer" al cambiar de tema: todo color de fondo, texto,
+   borde e ícono se desvanece gradualmente en vez de cambiar de golpe. Los elementos que
+   ya traen su propia transición de Tailwind (ej. hover:bg-* con transition-colors) tienen
+   mayor especificidad y conservan su velocidad normal para esas interacciones. */
+*, *::before, *::after {
+  transition: background-color 550ms ease-in-out, border-color 550ms ease-in-out, color 350ms ease-in-out, fill 350ms ease-in-out, stroke 350ms ease-in-out, box-shadow 550ms ease-in-out;
+}
+
+h1, h2, h3, h4, .font-display { font-family: 'Barlow', sans-serif; letter-spacing: 0.005em; }
+
+/* Los campos de formulario no heredan el fondo/color del tema por defecto del navegador
+   (siempre aparecen blancos con texto negro): forzamos que usen las variables del tema
+   para que también se adapten en modo oscuro, sin tener que tocar cada input del código. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+select option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* Reusable component-level classes kept intentionally small; most styling is via Tailwind utilities in templates */
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(11,11,107,0.06), 0 8px 24px -14px rgba(11,11,107,0.22);
+}
+
+.dark .panel {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px -14px rgba(0,0,0,0.5);
+}
+
+.ot-badge {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.03em;
+}
+
+/* focus visibility for accessibility */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--color-navy-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-wing-300); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

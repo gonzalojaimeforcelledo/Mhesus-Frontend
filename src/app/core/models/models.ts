@@ -1,0 +1,164 @@
+// Modelos de dominio — reflejan el esquema relacional del Design Doc MHESUS v1.0
+
+export type Rol = 'recepcion' | 'mecanico' | 'almacen' | 'jefe_taller' | 'administracion';
+
+export interface Usuario {
+  id: string;
+  nombre: string;
+  usuario: string;
+  passwordHash?: string; // el backend nunca lo envía (@JsonIgnore); queda opcional en el frontend
+  rol: Rol;
+  activo: boolean;
+}
+
+export interface Cliente {
+  id: string;
+  dni: string;
+  nombres: string;
+  apellidos: string;
+  celular: string;
+  direccion: string;
+  creadoEn: string;
+}
+
+export interface Motocicleta {
+  id: string;
+  clienteId: string;
+  placa: string;
+  marca: string;
+  modelo: string;
+  anio: number;
+  kmActual: number;
+}
+
+// Nivel de combustible mostrado como en el tablero de la moto (no un slider numérico)
+export type NivelCombustible = 'E' | '1/4' | '1/2' | '3/4' | 'F';
+export const NIVELES_COMBUSTIBLE: NivelCombustible[] = ['E', '1/4', '1/2', '3/4', 'F'];
+
+// Máquina de estados de la OT — sección 7 del Design Doc
+export type EstadoOT =
+  | 'Creada'
+  | 'Asignada'
+  | 'Pedido de repuestos'
+  | 'En diagnóstico'
+  | 'En espera de autorización'
+  | 'En ejecución'
+  | 'Control de calidad'
+  | 'Lista para entrega'
+  | 'Cerrada';
+
+export const SECUENCIA_ESTADOS_OT: EstadoOT[] = [
+  'Creada',
+  'Asignada',
+  'Pedido de repuestos',
+  'En diagnóstico',
+  'En espera de autorización',
+  'En ejecución',
+  'Control de calidad',
+  'Lista para entrega',
+  'Cerrada'
+];
+
+export interface OrdenTrabajo {
+  id: string;
+  numeroOT: string;
+  clienteId: string;
+  motoId: string;
+  mecanicoId: string | null;
+  asesorId: string | null;
+  estado: EstadoOT;
+  nivelCombustible: NivelCombustible;
+  observacionCliente: string;
+  servicioARealizar: string;
+  creadoEn: string;
+  trabajoIniciadoEn: string | null;
+  trabajoFinalizadoEn: string | null;
+  fotoIngreso?: string | null;
+}
+
+export interface Diagnostico {
+  id: string;
+  otId: string;
+  diagnostico: string;
+  sugerencias: string;
+  mecanicoNombre: string;
+  creadoEn: string;
+  fotoDiagnostico?: string | null;
+}
+
+export interface Producto {
+  id: string;
+  codigo: string;
+  codigoBarras?: string;
+  nombre: string;
+  categoria: string;
+  precio: number;
+  stockActual: number;
+  stockMinimo: number;
+  lugar?: string;
+}
+
+export type EstadoPedido = 'Solicitado' | 'Aprobado' | 'Despachado parcial' | 'Despachado' | 'Cancelado';
+
+export interface PedidoAlmacen {
+  id: string;
+  otId: string;
+  estado: EstadoPedido;
+  creadoPor: string;
+  creadoEn: string;
+  fotoDespacho?: string | null;
+}
+
+export interface PedidoDetalle {
+  id: string;
+  pedidoId: string;
+  productoId: string;
+  cantidadSolicitada: number;
+  cantidadDespachada: number;
+}
+
+export type TipoMovimiento = 'ingreso' | 'salida' | 'ajuste';
+
+export interface MovimientoInventario {
+  id: string;
+  productoId: string;
+  tipo: TipoMovimiento;
+  cantidad: number;
+  otId: string | null;
+  usuarioId: string;
+  creadoEn: string;
+}
+
+export interface ItemCotizacion {
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
+}
+
+export interface Cotizacion {
+  id: string;
+  otId: string;
+  detalle: ItemCotizacion[];
+  montoTotal: number;
+  autorizado: boolean;
+  autorizadoEn: string | null;
+}
+
+export interface RegistroAuditoria {
+  id: string;
+  otId: string | null;
+  usuarioId: string;
+  accion: string;
+  estadoAnterior: string | null;
+  estadoNuevo: string | null;
+  creadoEn: string;
+}
+
+export interface Notificacion {
+  id: string;
+  usuarioId: string;
+  mensaje: string;
+  otId: string | null;
+  leida: boolean;
+  creadoEn: string;
+}

@@ -79,6 +79,22 @@ export class StoreService {
     return this.motos().find((m) => m.placa.toUpperCase() === q);
   }
 
+  /**
+   * Igual que buscarMotoPorPlaca, pero le pregunta directo al backend en vez de
+   * mirar la lista guardada en memoria — para el chequeo de "placa duplicada" al
+   * crear una OT, donde necesitamos el dato más actual posible sin depender de
+   * cuándo se cargó por última vez la lista completa de motos.
+   */
+  async buscarMotoPorPlacaEnServidor(placa: string): Promise<Motocicleta | undefined> {
+    const q = placa.trim();
+    if (!q) return undefined;
+    try {
+      return await this.api.get<Motocicleta>('/motos', { placa: q });
+    } catch {
+      return undefined; // 404: no existe esa placa
+    }
+  }
+
   /** Sugerencias en vivo mientras se escribe la placa (coincidencia parcial), para autocompletar antes de tener el número completo. */
   motosPorPlacaParcial(query: string, limite = 5): Motocicleta[] {
     const q = query.trim().toUpperCase();

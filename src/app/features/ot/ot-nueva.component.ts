@@ -287,9 +287,30 @@ export class OtNuevaComponent implements OnInit {
 
   onPlacaChange(valor: string): void {
     this.placa = valor.toUpperCase();
+    if (this.debouncePlaca) clearTimeout(this.debouncePlaca);
+
+    if (this.placa.length < 5) {
+      this.motoEncontrada.set(undefined);
+      return;
+    }
+    // Limpia el resultado anterior de inmediato (evita mostrar por un instante
+    // los datos de una placa distinta mientras se resuelve la nueva consulta).
+    this.motoEncontrada.set(undefined);
+    // Le pregunta al backend directo (no a la lista en memoria) — así siempre
+    // detecta placas registradas hace un segundo, sin depender de cuándo se
+    // cargaron los datos por última vez en esta pestaña. Con un pequeño debounce
+    // para no golpear la API en cada tecla mientras se escribe.
+    const placaConsultada = this.placa;
+    this.debouncePlaca = setTimeout(async () => {
+      const resultado = await this.store.buscarMotoPorPlacaEnServidor(placaConsultada);
+      if (this.placa === placaConsultada) {
+        this.motoEncontrada.set(resultado);
+      }
+    }, 350);
   }
 
-  motoEncontrada = computed(() => (this.placa.length >= 5 ? this.store.buscarMotoPorPlaca(this.placa) : undefined));
+  motoEncontrada = signal<Motocicleta | undefined>(undefined);
+  private debouncePlaca?: ReturnType<typeof setTimeout>;
   sugerenciasMotos = computed(() => {
     if (this.placa.length < 2) return [];
     const encontrada = this.motoEncontrada();

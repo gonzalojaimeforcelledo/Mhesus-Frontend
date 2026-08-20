@@ -3,7 +3,7 @@ import { ApiService } from './api.service';
 import {
   Cliente, Cotizacion, Diagnostico, EstadoOT, ItemCotizacion, Motocicleta,
   MovimientoInventario, Notificacion, NivelCombustible, OrdenTrabajo, PedidoAlmacen, PedidoDetalle, Producto,
-  RegistroAuditoria, Rol, Usuario
+  RegistroAuditoria, Rol, Tarea, TipoTarea, Usuario
 } from '../models/models';
 
 /**
@@ -139,7 +139,7 @@ export class StoreService {
   // ---------- OT ----------
   async crearOT(datos: {
     clienteId: string; motoId: string; asesorId: string; nivelCombustible: NivelCombustible;
-    observacionCliente: string; servicioARealizar: string; kmActual?: number; fotoIngreso?: string | null;
+    observacionCliente: string; observacionAsesor?: string; servicioARealizar: string; kmActual?: number; fotoIngreso?: string | null;
   }): Promise<OrdenTrabajo> {
     const nueva = await this.api.post<OrdenTrabajo>('/ot', datos);
     await Promise.all([this.cargarOts(), this.cargarMotos(), this.cargarAuditoria()]);
@@ -327,6 +327,33 @@ export class StoreService {
 
   async restablecerPasswordUsuario(usuarioId: string, nuevaPassword: string): Promise<void> {
     await this.api.patch(`/usuarios/${usuarioId}/restablecer-password`, { nuevaPassword });
+  }
+
+  // ---------- Calendario / Tareas ----------
+  tareas = signal<Tarea[]>([]);
+
+  /** Carga las tareas de un rango de fechas (YYYY-MM-DD). Se llama desde el calendario, no forma parte de cargarTodo(). */
+  async cargarTareas(desde: string, hasta: string): Promise<void> {
+    this.tareas.set(await this.api.get<Tarea[]>('/tareas', { desde, hasta }));
+  }
+
+  async crearTarea(datos: {
+    titulo: string; descripcion?: string; fecha: string; hora?: string | null;
+    tipo?: TipoTarea; motoId?: string | null; asignadoA?: string | null;
+  }): Promise<Tarea> {
+    return this.api.post<Tarea>('/tareas', datos);
+  }
+
+  async asignarTarea(tareaId: string, asignadoA: string | null): Promise<Tarea> {
+    return this.api.patch<Tarea>(`/tareas/${tareaId}/asignar`, { asignadoA });
+  }
+
+  async completarTarea(tareaId: string): Promise<Tarea> {
+    return this.api.patch<Tarea>(`/tareas/${tareaId}/completar`);
+  }
+
+  async eliminarTarea(tareaId: string): Promise<void> {
+    await this.api.delete(`/tareas/${tareaId}`);
   }
 
   // ---------- Helpers de lectura cruzada ----------

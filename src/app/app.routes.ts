@@ -66,6 +66,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reportes/reportes.component').then((m) => m.ReportesComponent)
       },
       {
+        path: 'calendario',
+        canActivate: [moduloGuard('calendario')],
+        loadComponent: () => import('./features/calendario/calendario.component').then((m) => m.CalendarioComponent)
+      },
+      {
         path: 'administracion',
         canActivate: [moduloGuard('usuarios')],
         loadComponent: () => import('./features/administracion/administracion.component').then((m) => m.AdministracionComponent)

@@ -151,9 +151,12 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
                 <textarea [(ngModel)]="formDiag.diagnostico" name="diagnostico" rows="3" required placeholder="Diagnóstico técnico..." class="w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500"></textarea>
                 <textarea [(ngModel)]="formDiag.sugerencias" name="sugerencias" rows="3" placeholder="Sugerencias / insumos necesarios..." class="w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500"></textarea>
                 <app-foto-captura
-                  label="Foto de evidencia (opcional)" textoBoton="Tomar o subir foto del diagnóstico"
+                  [label]="diagnostico() ? 'Foto de evidencia (opcional al editar)' : 'Foto de evidencia (obligatoria)'" textoBoton="Tomar o subir foto del diagnóstico"
                   [valor]="formDiag.foto" (valorChange)="formDiag.foto = $event"
                 />
+                @if (intentoDiagnostico() && !diagnostico() && !formDiag.foto) {
+                  <p class="text-sm text-crimson-500">Falta la foto de evidencia — es obligatoria al registrar el diagnóstico por primera vez.</p>
+                }
                 <button type="submit" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900">{{ diagnostico() ? 'Actualizar diagnóstico' : 'Guardar y continuar a Pedido de almacén →' }}</button>
               </form>
             } @else if (!diagnostico()) {
@@ -354,6 +357,7 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
   generandoPdf = signal(false);
 
   formDiag = { diagnostico: '', sugerencias: '', foto: null as string | null };
+  intentoDiagnostico = signal(false);
   private _pedidoItems = signal<ItemPedidoForm[]>([{ productoId: '', nombreBusqueda: '', cantidad: 1, abierto: false }]);
   private _cotizacionItems = signal<ItemCotizacion[]>([{ descripcion: '', cantidad: 1, precioUnitario: 0 }]);
 
@@ -520,11 +524,14 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
   }
 
   async guardarDiagnostico(otId: string): Promise<void> {
-    if (!this.formDiag.diagnostico) return;
-    const nombre = this.auth.usuario()?.nombre ?? '';
+    this.intentoDiagnostico.set(true);
     const yaExistia = !!this.diagnostico();
+    if (!this.formDiag.diagnostico) return;
+    if (!yaExistia && !this.formDiag.foto) return; // foto obligatoria solo al registrar por primera vez, no al editar
+    const nombre = this.auth.usuario()?.nombre ?? '';
     await this.store.registrarDiagnostico(otId, this.formDiag.diagnostico, this.formDiag.sugerencias, nombre, this.formDiag.foto);
     this.formDiag = { diagnostico: '', sugerencias: '', foto: null };
+    this.intentoDiagnostico.set(false);
     if (this.esMecanicoAsignado() && !yaExistia) {
       this.irASeccion('almacen');
     }

@@ -69,6 +69,7 @@ export interface OrdenTrabajo {
   estado: EstadoOT;
   nivelCombustible: NivelCombustible;
   observacionCliente: string;
+  observacionAsesor?: string | null;
   servicioARealizar: string;
   creadoEn: string;
   trabajoIniciadoEn: string | null;
@@ -160,5 +161,21 @@ export interface Notificacion {
   mensaje: string;
   otId: string | null;
   leida: boolean;
+  creadoEn: string;
+}
+
+export type TipoTarea = 'nota' | 'recordatorio' | 'recordatorio_moto' | 'tarea_asignada';
+
+export interface Tarea {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  fecha: string; // YYYY-MM-DD
+  hora: string | null; // HH:mm
+  tipo: TipoTarea;
+  motoId: string | null;
+  creadoPor: string;
+  asignadoA: string | null;
+  completada: boolean;
   creadoEn: string;
 }

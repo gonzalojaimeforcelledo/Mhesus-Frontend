@@ -50,9 +50,12 @@ import { FotoCapturaComponent } from '../../shared/components/foto-captura.compo
                 @if (p.estado === 'Aprobado') {
                   <div class="mt-3 pt-3 border-t border-ink-100">
                     <app-foto-captura
-                      label="Foto de los productos entregados (opcional)" textoBoton="Tomar o subir foto del despacho"
+                      label="Foto de los productos entregados (obligatoria)" textoBoton="Tomar o subir foto del despacho"
                       [valor]="fotos[p.id] ?? null" (valorChange)="fotos[p.id] = $event"
                     />
+                    @if (intentoDespacho() === p.id && !fotos[p.id]) {
+                      <p class="text-sm text-crimson-500 mt-2">Falta la foto del despacho — es obligatoria para marcar como listo.</p>
+                    }
                     <button (click)="marcarListo(p.id)" class="mt-3 w-full sm:w-auto px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900">
                       Listo → avisar a Recepción
                     </button>
@@ -77,6 +80,7 @@ export class DespachoComponent {
   mensaje = signal<string | null>(null);
   esError = signal(false);
   fotos: Record<string, string | null> = {};
+  intentoDespacho = signal<string | null>(null);
 
   constructor(public store: StoreService, private auth: AuthService) {}
 
@@ -87,11 +91,13 @@ export class DespachoComponent {
   }
 
   async marcarListo(pedidoId: string): Promise<void> {
+    this.intentoDespacho.set(pedidoId);
+    if (!this.fotos[pedidoId]) return;
     const uid = this.auth.usuario()?.id ?? '';
     const res = await this.store.despacharPedido(pedidoId, uid, this.fotos[pedidoId] ?? null);
     this.esError.set(!res.ok);
     this.mensaje.set(res.ok ? 'Pedido despachado. Se avisó a Recepción que ya está listo.' : res.error ?? 'No se pudo despachar el pedido.');
-    if (res.ok) this.abierto.set(null);
+    if (res.ok) { this.abierto.set(null); this.intentoDespacho.set(null); }
   }
 }
 

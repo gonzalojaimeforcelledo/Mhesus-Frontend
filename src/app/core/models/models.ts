@@ -1,6 +1,6 @@
 // Modelos de dominio — reflejan el esquema relacional del Design Doc MHESUS v1.0
 
-export type Rol = 'recepcion' | 'mecanico' | 'almacen' | 'jefe_taller' | 'administracion';
+export type Rol = 'recepcion' | 'mecanico' | 'almacen' | 'administracion';
 
 export interface Usuario {
   id: string;

@@ -277,7 +277,7 @@ export class CalendarioComponent implements OnInit {
   nombreTipo(t: TipoTarea): string { return NOMBRE_TIPO[t]; }
   colorTipo(t: TipoTarea): string { return COLOR_TIPO[t]; }
   nombreRolCorto(rol: string): string {
-    return { recepcion: 'Recepción', mecanico: 'Mecánico', almacen: 'Almacén', jefe_taller: 'Jefe', administracion: 'Admin' }[rol] ?? rol;
+    return { recepcion: 'Recepción', mecanico: 'Mecánico', almacen: 'Almacén', administracion: 'Admin' }[rol] ?? rol;
   }
 
   abrirNueva(fecha: string): void {

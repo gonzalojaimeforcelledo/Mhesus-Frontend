@@ -150,7 +150,7 @@ import { Rol } from '../../core/models/models';
 })
 export class AdministracionComponent {
   tab = signal<'usuarios' | 'auditoria' | 'sistema'>('usuarios');
-  roles: Rol[] = ['recepcion', 'mecanico', 'almacen', 'jefe_taller', 'administracion'];
+  roles: Rol[] = ['recepcion', 'mecanico', 'almacen', 'administracion'];
   nuevo: { nombre: string; usuario: string; rol: Rol | '' } = { nombre: '', usuario: '', rol: '' };
 
   usuarioARestablecer = signal<{ id: string; nombre: string; usuario: string } | null>(null);

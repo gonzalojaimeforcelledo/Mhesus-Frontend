@@ -174,21 +174,10 @@ export class StoreService {
     }
   }
 
-  /** El mecánico marca el servicio como concluido: detiene el temporizador de trabajo y avanza la OT a Control de calidad. */
+  /** El mecánico marca el servicio como concluido: detiene el temporizador de trabajo y avanza la OT directo a "Lista para entrega" (sin jefe de taller de por medio). */
   async finalizarServicioYAvanzar(otId: string, _usuarioId: string): Promise<{ ok: boolean; error?: string }> {
     try {
       await this.api.patch(`/ot/${otId}/finalizar-servicio`);
-      await Promise.all([this.cargarOts(), this.cargarAuditoria()]);
-      return { ok: true };
-    } catch (err) {
-      return { ok: false, error: this.mensajeError(err) };
-    }
-  }
-
-  /** El Jefe de Taller aprueba el control de calidad: la OT pasa a "Lista para entrega". */
-  async aprobarControlCalidad(otId: string, _usuarioId: string): Promise<{ ok: boolean; error?: string }> {
-    try {
-      await this.api.patch(`/ot/${otId}/aprobar-calidad`);
       await Promise.all([this.cargarOts(), this.cargarAuditoria()]);
       return { ok: true };
     } catch (err) {

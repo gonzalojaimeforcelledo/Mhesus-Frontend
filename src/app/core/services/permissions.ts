@@ -1,30 +1,30 @@
 import { Rol } from '../models/models';
 
 export type Modulo = 'clientes' | 'ot' | 'almacen' | 'cotizacion' | 'reportes' | 'usuarios' | 'calendario';
-export type Permiso = 'todo' | 'lectura' | 'su_ot' | 'genera_pedido' | 'solicita_repuestos' | 'control_calidad' | 'ninguno';
+export type Permiso = 'todo' | 'lectura' | 'su_ot' | 'genera_pedido' | 'solicita_repuestos' | 'ninguno';
 
 // Matriz de permisos — sección 8 "Seguridad y control de acceso (RBAC)" del Design Doc
 const MATRIZ: Record<Modulo, Record<Rol, Permiso>> = {
   clientes: {
-    recepcion: 'todo', mecanico: 'ninguno', almacen: 'ninguno', jefe_taller: 'lectura', administracion: 'todo'
+    recepcion: 'todo', mecanico: 'ninguno', almacen: 'ninguno', administracion: 'todo'
   },
   ot: {
-    recepcion: 'todo', mecanico: 'su_ot', almacen: 'lectura', jefe_taller: 'control_calidad', administracion: 'todo'
+    recepcion: 'todo', mecanico: 'su_ot', almacen: 'lectura', administracion: 'todo'
   },
   almacen: {
-    recepcion: 'genera_pedido', mecanico: 'solicita_repuestos', almacen: 'todo', jefe_taller: 'ninguno', administracion: 'todo'
+    recepcion: 'genera_pedido', mecanico: 'solicita_repuestos', almacen: 'todo', administracion: 'todo'
   },
   cotizacion: {
-    recepcion: 'todo', mecanico: 'ninguno', almacen: 'ninguno', jefe_taller: 'ninguno', administracion: 'lectura'
+    recepcion: 'todo', mecanico: 'ninguno', almacen: 'ninguno', administracion: 'lectura'
   },
   reportes: {
-    recepcion: 'ninguno', mecanico: 'ninguno', almacen: 'ninguno', jefe_taller: 'ninguno', administracion: 'todo'
+    recepcion: 'ninguno', mecanico: 'ninguno', almacen: 'ninguno', administracion: 'todo'
   },
   usuarios: {
-    recepcion: 'ninguno', mecanico: 'ninguno', almacen: 'ninguno', jefe_taller: 'ninguno', administracion: 'todo'
+    recepcion: 'ninguno', mecanico: 'ninguno', almacen: 'ninguno', administracion: 'todo'
   },
   calendario: {
-    recepcion: 'todo', mecanico: 'ninguno', almacen: 'todo', jefe_taller: 'ninguno', administracion: 'todo'
+    recepcion: 'todo', mecanico: 'ninguno', almacen: 'todo', administracion: 'todo'
   }
 };
 
@@ -40,7 +40,6 @@ export const NOMBRE_ROL: Record<Rol, string> = {
   recepcion: 'Recepción',
   mecanico: 'Mecánico',
   almacen: 'Almacén',
-  jefe_taller: 'Jefe de Taller',
   administracion: 'Administración'
 };
 
@@ -49,5 +48,5 @@ export type NivelProducto = 'completo' | 'con_precio' | 'solo_nombre';
 export function nivelVistaProducto(rol: Rol): NivelProducto {
   if (rol === 'almacen' || rol === 'administracion') return 'completo';
   if (rol === 'recepcion') return 'con_precio';
-  return 'solo_nombre'; // mecánico y jefe_taller
+  return 'solo_nombre'; // mecánico
 }

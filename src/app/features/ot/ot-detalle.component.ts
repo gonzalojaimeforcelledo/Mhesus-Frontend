@@ -101,12 +101,6 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
               </button>
             }
 
-            @if (o.estado === 'Control de calidad' && esJefeTaller()) {
-              <button (click)="aprobarCalidad(o.id)" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium">
-                ✓ Aprobar control de calidad
-              </button>
-            }
-
             @if (o.estado === 'Lista para entrega' && esRecepcion()) {
               <button (click)="cerrar(o.id)" class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600">Registrar cobro y cerrar OT</button>
             }
@@ -497,7 +491,6 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     const o = this.ot();
     return !!o && !!o.trabajoIniciadoEn && !o.trabajoFinalizadoEn;
   });
-  esJefeTaller(): boolean { return this.auth.rol() === 'jefe_taller'; }
   puedeDiagnosticar(): boolean { return this.esMecanicoAsignado(); }
   puedeGenerarPedido(): boolean { return this.esMecanicoAsignado(); }
   puedeDespachar(): boolean { return this.auth.rol() === 'almacen'; }
@@ -521,11 +514,6 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     this.mensaje.set(res.ok ? null : res.error ?? null);
   }
 
-  async aprobarCalidad(otId: string): Promise<void> {
-    const res = await this.store.aprobarControlCalidad(otId, this.uid());
-    this.mensaje.set(res.ok ? null : res.error ?? null);
-  }
-
   async forzarEstado(otId: string): Promise<void> {
     if (!this.estadoForzado) return;
     const res = await this.store.cambiarEstadoOT(otId, this.estadoForzado, this.uid(), true);
@@ -534,7 +522,51 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
   }
 
   async cerrar(otId: string): Promise<void> {
-    await this.store.cerrarOT(otId, this.uid());
+    const res = await this.store.cerrarOT(otId, this.uid());
+    if (res.ok) {
+      this.enviarWhatsappCierre(otId);
+    } else {
+      this.mensaje.set(res.error ?? 'No se pudo cerrar la OT.');
+    }
+  }
+
+  /**
+   * Abre WhatsApp con el mensaje de cierre ya redactado y el número del
+   * cliente ya seleccionado, para que solo falte darle "Enviar". No es 100%
+   * automático de extremo a extremo porque WhatsApp no deja mandar mensajes
+   * de negocio sin intervención humana salvo que se contrate la API oficial
+   * de WhatsApp Business (de pago, requiere cuenta verificada de Meta) — esto
+   * es lo más cercano a "automático" sin esa integración paga.
+   */
+  private enviarWhatsappCierre(otId: string): void {
+    const o = this.store.ot(otId);
+    if (!o) return;
+    const cliente = this.store.cliente(o.clienteId);
+    const moto = this.store.moto(o.motoId);
+    if (!cliente?.celular) return;
+
+    const numero = this.formatearNumeroWhatsapp(cliente.celular);
+    if (!numero) return;
+
+    const cot = this.store.cotizacionDeOT(otId);
+    const totalTexto = cot ? `\nTotal: S/ ${cot.montoTotal.toFixed(2)}` : '';
+    const mensaje =
+      `Hola ${cliente.nombres}, tu moto ${moto?.placa ?? ''} (${moto?.marca ?? ''} ${moto?.modelo ?? ''}) ` +
+      `ya está lista para recoger en MHESUS.\n` +
+      `OT: ${o.numeroOT}\nServicio: ${o.servicioARealizar}${totalTexto}\n` +
+      `¡Te esperamos!`;
+
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+  }
+
+  /** Deja el celular en formato E.164 sin "+" que pide wa.me. Asume Perú (51) si el número no trae código de país. */
+  private formatearNumeroWhatsapp(celular: string): string | null {
+    const soloDigitos = celular.replace(/\D/g, '');
+    if (!soloDigitos) return null;
+    if (soloDigitos.length === 9) return `51${soloDigitos}`; // celular peruano sin código de país
+    if (soloDigitos.startsWith('51') && soloDigitos.length === 11) return soloDigitos;
+    return soloDigitos; // ya trae algún código de país distinto — se manda tal cual
   }
 
   async guardarDiagnostico(otId: string): Promise<void> {

@@ -100,39 +100,34 @@ const ACCESOS: AccesoRapido[] = [
           </div>
         </div>
       } @else if (esMecanico()) {
-        <!-- Cola de OT en espera — lo primero y más grande, es lo que el mecánico necesita ver de inmediato -->
-        <div class="panel p-6">
-          <div class="flex items-center justify-between mb-5">
-            <h2 class="font-display font-700 text-xl text-ink-900">Servicios en espera de atender</h2>
-            <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-600">{{ serviciosEnEspera().length }} en cola</span>
+        <!-- Cola de OT en espera, estilo "pantalla de turnos" — número grande y bien
+             visible, para que se pueda leer de lejos como una pantalla de ventanilla. -->
+        <div class="panel overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 bg-navy-900 text-white">
+            <h2 class="font-display font-700 text-xl tracking-wide">Servicios en espera de atender</h2>
+            <span class="font-display font-700 text-sm bg-white/15 rounded-full px-3 py-1">{{ serviciosEnEspera().length }} en cola</span>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr class="text-left text-ink-500 border-b border-ink-100">
-                  <th class="py-3 pr-4 font-medium text-sm">N° OT</th>
-                  <th class="py-3 pr-4 font-medium text-sm">Hora de llegada</th>
-                  <th class="py-3 pr-4 font-medium text-sm">Moto</th>
-                  <th class="py-3 pr-4 font-medium text-sm">Para</th>
-                  <th class="py-3 pr-4 font-medium text-sm">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (ot of serviciosEnEspera(); track ot.id) {
-                  <tr [routerLink]="['/ot', ot.id]" class="border-b border-ink-50 hover:bg-ink-50/60 cursor-pointer">
-                    <td class="py-4 pr-4 font-mono text-base font-bold text-brand-700">{{ ot.numeroOT }}</td>
-                    <td class="py-4 pr-4 text-ink-500">{{ ot.creadoEn | date:'shortTime' }}</td>
-                    <td class="py-4 pr-4 text-lg font-medium text-ink-900">{{ store.moto(ot.motoId)?.placa }}</td>
-                    <td class="py-4 pr-4 text-ink-700">{{ store.usuario(ot.mecanicoId)?.nombre ?? 'Sin asignar' }}</td>
-                    <td class="py-4 pr-4">
-                      <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-600">{{ ot.estado }}</span>
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr><td colspan="5" class="py-10 text-center text-ink-500">No hay servicios en espera por ahora.</td></tr>
-                }
-              </tbody>
-            </table>
+          <div class="divide-y divide-ink-50">
+            @for (ot of serviciosEnEspera(); track ot.id) {
+              <div [routerLink]="['/ot', ot.id]" class="flex items-center gap-4 px-6 py-4 hover:bg-ink-50/60 cursor-pointer">
+                <div class="min-w-0">
+                  <p class="font-display font-700 text-3xl sm:text-4xl leading-none text-navy-700 tracking-wide">{{ ot.numeroOT }}</p>
+                  <p class="text-sm text-ink-500 mt-1.5 truncate">
+                    {{ store.moto(ot.motoId)?.placa }} · llegó {{ ot.creadoEn | date:'shortTime' }}
+                  </p>
+                </div>
+                <div class="flex-1"></div>
+                <div class="flex flex-col items-center gap-1 shrink-0">
+                  <span
+                    class="font-display font-700 text-sm w-14 h-14 rounded-full flex items-center justify-center text-white text-center leading-tight px-1"
+                    [style.background]="estadoColor(ot.estado)"
+                  >{{ estadoAbrev(ot.estado) }}</span>
+                  <span class="text-[11px] text-ink-400 truncate max-w-[6rem]">{{ store.usuario(ot.mecanicoId)?.nombre ?? 'Sin asignar' }}</span>
+                </div>
+              </div>
+            } @empty {
+              <p class="py-12 text-center text-ink-500">No hay servicios en espera por ahora.</p>
+            }
           </div>
         </div>
 
@@ -274,6 +269,37 @@ export class DashboardComponent {
       .filter((o) => this.ESTADOS_EN_ESPERA.has(o.estado))
       .sort((a, b) => new Date(a.creadoEn).getTime() - new Date(b.creadoEn).getTime())
   );
+
+  private readonly ABREV_ESTADO: Record<string, string> = {
+    'Creada': 'CR',
+    'Asignada': 'AS',
+    'Pedido de repuestos': 'PR',
+    'En diagnóstico': 'DX',
+    'En espera de autorización': 'AU',
+    'En ejecución': 'EJ',
+    'Control de calidad': 'CC',
+    'Lista para entrega': 'LE',
+    'Cerrada': 'CE'
+  };
+  private readonly COLOR_ESTADO: Record<string, string> = {
+    'Creada': '#8B90A3',
+    'Asignada': '#3A44C9',
+    'Pedido de repuestos': '#F2A93B',
+    'En diagnóstico': '#F2A93B',
+    'En espera de autorización': '#F2A93B',
+    'En ejecución': '#1FA971',
+    'Control de calidad': '#1FA971',
+    'Lista para entrega': '#1FA971',
+    'Cerrada': '#8B90A3'
+  };
+
+  estadoAbrev(estado: string): string {
+    return this.ABREV_ESTADO[estado] ?? estado.slice(0, 2).toUpperCase();
+  }
+
+  estadoColor(estado: string): string {
+    return this.COLOR_ESTADO[estado] ?? '#8B90A3';
+  }
 
   // ---------- Métricas de Almacén ----------
   totalProductos = computed(() => this.store.productos().length);

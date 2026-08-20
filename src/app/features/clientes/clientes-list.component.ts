@@ -59,9 +59,15 @@ import { permisoDe } from '../../core/services/permissions';
       }
 
       <div class="panel">
-        <div class="flex items-center gap-3 px-5 py-4 border-b border-ink-100">
-          <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input [(ngModel)]="filtro" placeholder="Buscar por placa, nombre o DNI..." class="w-full text-sm outline-none" />
+        <div class="flex items-center gap-3 px-5 py-4 border-b border-ink-100 flex-wrap">
+          <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input [(ngModel)]="filtro" placeholder="Buscar por placa, nombre o DNI..." class="w-full text-sm outline-none" />
+          </div>
+          <label class="flex items-center gap-2 text-xs font-medium text-ink-500 cursor-pointer select-none shrink-0">
+            <input type="checkbox" [(ngModel)]="soloVariasMotos" class="rounded border-ink-100 accent-navy-700" />
+            Solo dueños con más de una moto
+          </label>
         </div>
 
         <div class="overflow-x-auto">
@@ -81,7 +87,12 @@ import { permisoDe } from '../../core/services/permissions';
                 <tr [routerLink]="['/motos', fila.moto.id, 'historial']" class="border-b border-ink-50 hover:bg-ink-50/60 cursor-pointer">
                   <td class="py-3 px-5 font-mono font-medium text-brand-700">{{ fila.moto.placa }}</td>
                   <td class="py-3 px-5 text-ink-900">{{ fila.moto.marca }} {{ fila.moto.modelo }} · {{ fila.moto.anio }}</td>
-                  <td class="py-3 px-5 text-ink-900">{{ fila.cliente?.nombres }} {{ fila.cliente?.apellidos }}</td>
+                  <td class="py-3 px-5 text-ink-900">
+                    {{ fila.cliente?.nombres }} {{ fila.cliente?.apellidos }}
+                    @if (fila.totalMotosDelDueno > 1) {
+                      <span class="ml-1.5 text-xs font-medium text-navy-700 bg-navy-500/10 rounded-full px-2 py-0.5">{{ fila.totalMotosDelDueno }} motos</span>
+                    }
+                  </td>
                   <td class="py-3 px-5 text-ink-500 font-mono">{{ fila.cliente?.dni }}</td>
                   <td class="py-3 px-5 text-ink-500">{{ fila.cliente?.celular }}</td>
                   <td class="py-3 px-5 text-brand-700 text-xs font-medium whitespace-nowrap">Ver historial →</td>
@@ -98,25 +109,43 @@ import { permisoDe } from '../../core/services/permissions';
 })
 export class ClientesListComponent {
   filtro = '';
+  soloVariasMotos = false;
   mostrarForm = signal(false);
 
   nuevo = { dni: '', nombres: '', apellidos: '', celular: '', direccion: '' };
 
   constructor(public store: StoreService, private auth: AuthService) {}
 
+  private conteoPorCliente = computed(() => {
+    const mapa = new Map<string, number>();
+    for (const m of this.store.motos()) {
+      mapa.set(m.clienteId, (mapa.get(m.clienteId) ?? 0) + 1);
+    }
+    return mapa;
+  });
+
   private todasLasFilas = computed(() =>
-    this.store.motos().map((moto) => ({ moto, cliente: this.store.cliente(moto.clienteId) }))
+    this.store.motos().map((moto) => ({
+      moto,
+      cliente: this.store.cliente(moto.clienteId),
+      totalMotosDelDueno: this.conteoPorCliente().get(moto.clienteId) ?? 1
+    }))
   );
 
   motosFiltradas = computed(() => {
     const q = this.filtro.trim().toLowerCase();
-    const filas = this.todasLasFilas();
-    if (!q) return filas;
-    return filas.filter(({ moto, cliente }) =>
-      moto.placa.toLowerCase().includes(q) ||
-      (cliente?.dni ?? '').includes(q) ||
-      `${cliente?.nombres ?? ''} ${cliente?.apellidos ?? ''}`.toLowerCase().includes(q)
-    );
+    let filas = this.todasLasFilas();
+    if (q) {
+      filas = filas.filter(({ moto, cliente }) =>
+        moto.placa.toLowerCase().includes(q) ||
+        (cliente?.dni ?? '').includes(q) ||
+        `${cliente?.nombres ?? ''} ${cliente?.apellidos ?? ''}`.toLowerCase().includes(q)
+      );
+    }
+    if (this.soloVariasMotos) {
+      filas = filas.filter((f) => f.totalMotosDelDueno > 1);
+    }
+    return filas;
   });
 
   soloLectura = computed(() => {

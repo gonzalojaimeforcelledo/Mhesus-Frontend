@@ -245,6 +245,7 @@ export class OtNuevaComponent implements OnInit {
   dniBusqueda = '';
   modoAlta = signal<ModoAltaMoto>('nuevoCliente');
   clienteParaMotoNueva = signal<Cliente | null>(null);
+  errorPlacaDuplicada = signal(false);
 
   clienteSeleccionado = signal<Cliente | null>(null);
   motoSeleccionada = signal<Motocicleta | null>(null);
@@ -363,6 +364,7 @@ export class OtNuevaComponent implements OnInit {
 
   async registrarMotoYDueno(): Promise<void> {
     if (!this.puedeRegistrarMotoNueva()) return;
+    this.errorPlacaDuplicada.set(false);
     let cliente = this.modoAlta() === 'dni' ? this.clienteParaMotoNueva() : null;
     if (this.modoAlta() === 'nuevoCliente') {
       cliente = await this.store.crearCliente({
@@ -374,15 +376,27 @@ export class OtNuevaComponent implements OnInit {
       });
     }
     if (!cliente) return;
-    const moto = await this.store.agregarMoto({
-      clienteId: cliente.id,
-      placa: this.placa,
-      marca: this.nuevaMoto.marca,
-      modelo: this.nuevaMoto.modelo,
-      anio: this.nuevaMoto.anio,
-      kmActual: 0
-    });
-    this.reconocerMoto(moto);
+    try {
+      const moto = await this.store.agregarMoto({
+        clienteId: cliente.id,
+        placa: this.placa,
+        marca: this.nuevaMoto.marca,
+        modelo: this.nuevaMoto.modelo,
+        anio: this.nuevaMoto.anio,
+        kmActual: 0
+      });
+      this.reconocerMoto(moto);
+    } catch (err) {
+      const anyErr = err as { status?: number; error?: { motoExistente?: Motocicleta } };
+      if (anyErr?.status === 409 && anyErr.error?.motoExistente) {
+        // Alguien más registró esta misma placa justo antes (ej. dos recepcionistas
+        // a la vez) — en vez de un error críptico, reconocemos la moto existente
+        // directamente, igual que si la hubiéramos encontrado al escribir la placa.
+        this.errorPlacaDuplicada.set(true);
+        await this.store.cargarMotos();
+        this.reconocerMoto(anyErr.error.motoExistente);
+      }
+    }
   }
 
   async crear(): Promise<void> {

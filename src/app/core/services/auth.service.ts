@@ -85,6 +85,11 @@ export class AuthService {
     }
   }
 
+  /** "No me acuerdo la contraseña" — avisa a todos los administradores por notificación interna. */
+  async solicitarRestablecimiento(usuario: string): Promise<void> {
+    await this.api.post('/auth/solicitar-restablecimiento', { usuario: usuario.trim() });
+  }
+
   private cerrarSesionLocal(): void {
     this.usuarioActual.set(null);
     this.storage.set('sesion', null);

@@ -298,6 +298,10 @@ export class StoreService {
     await this.cargarUsuarios();
   }
 
+  async restablecerPasswordUsuario(usuarioId: string, nuevaPassword: string): Promise<void> {
+    await this.api.patch(`/usuarios/${usuarioId}/restablecer-password`, { nuevaPassword });
+  }
+
   // ---------- Helpers de lectura cruzada ----------
   cliente(id: string): Cliente | undefined { return this.clientes().find((c) => c.id === id); }
   moto(id: string): Motocicleta | undefined { return this.motos().find((m) => m.id === id); }

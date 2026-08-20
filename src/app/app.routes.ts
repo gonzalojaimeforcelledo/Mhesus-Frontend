@@ -7,6 +7,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent)
   },
   {
+    path: 'terminos',
+    loadComponent: () => import('./features/terminos/terminos.component').then((m) => m.TerminosComponent)
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./shared/components/shell.component').then((m) => m.ShellComponent),
@@ -68,5 +72,5 @@ export const routes: Routes = [
       }
     ]
   },
-  { path: '**', redirectTo: 'inicio' }
+  { path: '**', loadComponent: () => import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent) }
 ];

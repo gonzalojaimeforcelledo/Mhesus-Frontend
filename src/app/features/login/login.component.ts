@@ -1,14 +1,14 @@
 import { Component, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="min-h-screen grid lg:grid-cols-2 bg-ink-50">
       <!-- Tema claro / oscuro -->
@@ -93,10 +93,40 @@ import { ThemeService } from '../../core/services/theme.service';
               </div>
             </div>
 
-            <label class="flex items-center gap-2 text-sm text-ink-500 cursor-pointer select-none">
-              <input type="checkbox" [(ngModel)]="recordarme" name="recordarme" class="rounded border-ink-100 accent-navy-700" />
-              Recordar mi usuario en este dispositivo
-            </label>
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 text-sm text-ink-500 cursor-pointer select-none">
+                <input type="checkbox" [(ngModel)]="recordarme" name="recordarme" class="rounded border-ink-100 accent-navy-700" />
+                Recordarme
+              </label>
+              <button type="button" (click)="mostrarOlvide.set(!mostrarOlvide())" class="text-sm text-navy-700 hover:underline">
+                ¿No recuerdas tu contraseña?
+              </button>
+            </div>
+
+            @if (mostrarOlvide()) {
+              <div class="rounded-lg border border-ink-100 bg-ink-50 px-3 py-3 space-y-2">
+                @if (olvideEnviado()) {
+                  <p class="text-sm text-emerald-600 flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                    Se avisó al administrador. Te contactará para restablecer tu acceso.
+                  </p>
+                } @else {
+                  <p class="text-xs text-ink-500">
+                    Le avisaremos al administrador para que restablezca tu contraseña. Escribe tu usuario:
+                  </p>
+                  <div class="flex gap-2">
+                    <input
+                      type="text" [(ngModel)]="usuarioOlvide" name="usuarioOlvide"
+                      class="flex-1 rounded-lg border border-ink-100 bg-surface px-3 py-2 text-sm outline-none focus:border-navy-500"
+                      placeholder="Tu usuario"
+                    />
+                    <button type="button" (click)="enviarOlvide()" [disabled]="!usuarioOlvide.trim() || enviandoOlvide()" class="bg-navy-700 hover:bg-navy-900 disabled:opacity-50 text-white text-sm font-medium rounded-lg px-4 py-2 whitespace-nowrap">
+                      {{ enviandoOlvide() ? 'Enviando...' : 'Avisar' }}
+                    </button>
+                  </div>
+                }
+              </div>
+            }
 
             @if (bloqueado()) {
               <p class="text-sm text-amber-600 bg-amber-400/10 border border-amber-400/30 rounded-lg px-3 py-2.5 flex items-center gap-2">
@@ -112,7 +142,9 @@ import { ThemeService } from '../../core/services/theme.service';
             </button>
           </form>
 
-          <p class="text-[11px] text-ink-300 mt-6 text-center">Contraseña de demostración: <span class="font-mono">demo1234</span></p>
+          <p class="text-xs text-ink-400 mt-8 text-center">
+            Al continuar, aceptas los <a routerLink="/terminos" class="text-navy-700 hover:underline">Términos y condiciones</a> de uso del sistema.
+          </p>
         </div>
       </div>
 
@@ -141,6 +173,10 @@ export class LoginComponent implements OnDestroy {
   cerradaPorInactividad = signal(false);
   bloqueadoHasta = signal<number | null>(null);
   cookiesAceptadas = signal(localStorage.getItem(LoginComponent.CLAVE_COOKIES) === 'true');
+  mostrarOlvide = signal(false);
+  usuarioOlvide = '';
+  enviandoOlvide = signal(false);
+  olvideEnviado = signal(false);
   private ahora = signal(Date.now());
   private intervalo?: ReturnType<typeof setInterval>;
 
@@ -174,6 +210,22 @@ export class LoginComponent implements OnDestroy {
   aceptarCookies(): void {
     localStorage.setItem(LoginComponent.CLAVE_COOKIES, 'true');
     this.cookiesAceptadas.set(true);
+  }
+
+  async enviarOlvide(): Promise<void> {
+    const nombre = this.usuarioOlvide.trim();
+    if (!nombre) return;
+    this.enviandoOlvide.set(true);
+    try {
+      await this.auth.solicitarRestablecimiento(nombre);
+    } catch {
+      // Aunque falle la llamada, mostramos igual el mensaje de confirmación:
+      // no queremos revelar si un usuario existe o no, ni bloquear al que
+      // olvidó su contraseña con un error técnico que no puede resolver.
+    } finally {
+      this.enviandoOlvide.set(false);
+      this.olvideEnviado.set(true);
+    }
   }
 
   bloqueado(): boolean {

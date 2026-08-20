@@ -100,50 +100,58 @@ const ACCESOS: AccesoRapido[] = [
           </div>
         </div>
       } @else if (esMecanico()) {
-        <!-- Métricas de Mecánico -->
-        <div class="grid grid-cols-2 gap-4">
-          <div class="panel p-4">
-            <p class="text-xs text-ink-500">Tus servicios realizados</p>
-            <p class="font-display font-700 text-3xl text-brand-900 mt-1">{{ misServiciosRealizados() }}</p>
+        <!-- Cola de OT en espera — lo primero y más grande, es lo que el mecánico necesita ver de inmediato -->
+        <div class="panel p-6">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="font-display font-700 text-xl text-ink-900">Servicios en espera de atender</h2>
+            <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-600">{{ serviciosEnEspera().length }} en cola</span>
           </div>
-          <div class="panel p-4">
-            <p class="text-xs text-ink-500">Mecánico con más OT realizadas</p>
-            @if (mecanicoTop(); as t) {
-              <p class="font-display font-700 text-lg text-emerald-500 mt-1">{{ t.nombre }} <span class="text-ink-400 text-sm font-body">({{ t.cantidad }})</span></p>
-            } @else {
-              <p class="text-sm text-ink-500 mt-1">Sin datos todavía.</p>
-            }
-          </div>
-        </div>
-
-        <!-- Servicios en espera de atender -->
-        <div class="panel p-5">
-          <h2 class="font-display font-600 text-ink-900 mb-4">Servicios en espera de atender</h2>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full">
               <thead>
                 <tr class="text-left text-ink-500 border-b border-ink-100">
-                  <th class="py-2 pr-4 font-medium">N° OT</th>
-                  <th class="py-2 pr-4 font-medium">Hora de llegada</th>
-                  <th class="py-2 pr-4 font-medium">Moto</th>
-                  <th class="py-2 pr-4 font-medium">Para</th>
-                  <th class="py-2 pr-4 font-medium">Estado</th>
+                  <th class="py-3 pr-4 font-medium text-sm">N° OT</th>
+                  <th class="py-3 pr-4 font-medium text-sm">Hora de llegada</th>
+                  <th class="py-3 pr-4 font-medium text-sm">Moto</th>
+                  <th class="py-3 pr-4 font-medium text-sm">Para</th>
+                  <th class="py-3 pr-4 font-medium text-sm">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 @for (ot of serviciosEnEspera(); track ot.id) {
                   <tr [routerLink]="['/ot', ot.id]" class="border-b border-ink-50 hover:bg-ink-50/60 cursor-pointer">
-                    <td class="py-2.5 pr-4 font-mono text-xs font-semibold text-brand-700">{{ ot.numeroOT }}</td>
-                    <td class="py-2.5 pr-4 text-ink-500">{{ ot.creadoEn | date:'shortTime' }}</td>
-                    <td class="py-2.5 pr-4 text-ink-900">{{ store.moto(ot.motoId)?.placa }}</td>
-                    <td class="py-2.5 pr-4 text-ink-700">{{ store.usuario(ot.mecanicoId)?.nombre ?? 'Sin asignar' }}</td>
-                    <td class="py-2.5 pr-4 text-xs text-ink-500">{{ ot.estado }}</td>
+                    <td class="py-4 pr-4 font-mono text-base font-bold text-brand-700">{{ ot.numeroOT }}</td>
+                    <td class="py-4 pr-4 text-ink-500">{{ ot.creadoEn | date:'shortTime' }}</td>
+                    <td class="py-4 pr-4 text-lg font-medium text-ink-900">{{ store.moto(ot.motoId)?.placa }}</td>
+                    <td class="py-4 pr-4 text-ink-700">{{ store.usuario(ot.mecanicoId)?.nombre ?? 'Sin asignar' }}</td>
+                    <td class="py-4 pr-4">
+                      <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-600">{{ ot.estado }}</span>
+                    </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="py-6 text-center text-ink-500">No hay servicios en espera por ahora.</td></tr>
+                  <tr><td colspan="5" class="py-10 text-center text-ink-500">No hay servicios en espera por ahora.</td></tr>
                 }
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Resumen del mecánico — debajo, más compacto -->
+        <div>
+          <h2 class="font-display font-600 text-sm text-ink-500 mb-3">Tu resumen</h2>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="panel p-4">
+              <p class="text-xs text-ink-500">Tus servicios realizados</p>
+              <p class="font-display font-700 text-3xl text-brand-900 mt-1">{{ misServiciosRealizados() }}</p>
+            </div>
+            <div class="panel p-4">
+              <p class="text-xs text-ink-500">Mecánico con más OT realizadas</p>
+              @if (mecanicoTop(); as t) {
+                <p class="font-display font-700 text-lg text-emerald-500 mt-1">{{ t.nombre }} <span class="text-ink-400 text-sm font-body">({{ t.cantidad }})</span></p>
+              } @else {
+                <p class="text-sm text-ink-500 mt-1">Sin datos todavía.</p>
+              }
+            </div>
           </div>
         </div>
       } @else {

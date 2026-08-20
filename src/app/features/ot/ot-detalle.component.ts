@@ -75,6 +75,13 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
                 @if (o.fotoIngresoLateralDer) {
                   <div><img [src]="o.fotoIngresoLateralDer" alt="Lateral derecho" class="h-28 rounded-lg border border-ink-100 object-cover" /><p class="text-[11px] text-ink-400 mt-1 text-center">Lateral der.</p></div>
                 }
+                @if (o.fotoTablero) {
+                  <div><img [src]="o.fotoTablero" alt="Tablero" class="h-28 rounded-lg border border-ink-100 object-cover" /><p class="text-[11px] text-ink-400 mt-1 text-center">Tablero</p></div>
+                } @else if (o.tableroNoEnciende) {
+                  <div class="h-28 w-28 rounded-lg border border-amber-400/40 bg-amber-400/5 flex items-center justify-center text-center px-2">
+                    <p class="text-[11px] text-amber-600">Tablero no encendió</p>
+                  </div>
+                }
               </div>
             </div>
           }

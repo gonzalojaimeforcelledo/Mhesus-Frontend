@@ -215,6 +215,25 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
             </div>
 
             <div>
+              <label class="text-sm font-medium text-ink-700 block mb-2">Foto del tablero encendido (obligatoria)</label>
+              <app-foto-captura
+                label="Tablero" textoBoton="Tomar o subir foto del tablero encendido"
+                [valor]="form.fotoTablero" (valorChange)="form.fotoTablero = $event"
+                [class.opacity-50]="form.tableroNoEnciende"
+              />
+              <label class="flex items-center gap-2 text-sm text-ink-500 cursor-pointer select-none mt-2">
+                <input type="checkbox" [(ngModel)]="form.tableroNoEnciende" name="tableroNoEnciende" class="rounded border-ink-100 accent-navy-700" />
+                El tablero no enciende
+              </label>
+              @if (form.tableroNoEnciende) {
+                <p class="text-xs text-amber-600 mt-1">No olvides anotar esto en "Observación del asesor" más abajo.</p>
+              }
+              @if (intentoEnviar() && !form.tableroNoEnciende && !form.fotoTablero) {
+                <p class="text-sm text-crimson-500 mt-2">Falta la foto del tablero — es obligatoria salvo que el tablero no encienda.</p>
+              }
+            </div>
+
+            <div>
               <label class="text-sm font-medium text-ink-700">Observación del asesor</label>
               <textarea [(ngModel)]="form.observacionAsesor" name="observacionAsesor" rows="2" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" placeholder="Lo que el asesor nota al revisar la moto en recepción"></textarea>
             </div>
@@ -285,13 +304,18 @@ export class OtNuevaComponent implements OnInit {
   form: {
     observacionCliente: string; observacionAsesor: string; servicioARealizar: string; nivelCombustible: NivelCombustible; kmActual: number | null;
     fotoIngreso: string | null; fotoIngresoTrasera: string | null; fotoIngresoLateralIzq: string | null; fotoIngresoLateralDer: string | null;
+    fotoTablero: string | null; tableroNoEnciende: boolean;
   } = {
     observacionCliente: '', observacionAsesor: '', servicioARealizar: '', nivelCombustible: '1/2', kmActual: null,
-    fotoIngreso: null, fotoIngresoTrasera: null, fotoIngresoLateralIzq: null, fotoIngresoLateralDer: null
+    fotoIngreso: null, fotoIngresoTrasera: null, fotoIngresoLateralIzq: null, fotoIngresoLateralDer: null,
+    fotoTablero: null, tableroNoEnciende: false
   };
   intentoEnviar = signal(false);
   fotosCompletas(): boolean {
     return !!this.form.fotoIngreso && !!this.form.fotoIngresoTrasera && !!this.form.fotoIngresoLateralIzq && !!this.form.fotoIngresoLateralDer;
+  }
+  fotoTableroValida(): boolean {
+    return this.form.tableroNoEnciende || !!this.form.fotoTablero;
   }
 
   constructor(public store: StoreService, private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
@@ -477,7 +501,7 @@ export class OtNuevaComponent implements OnInit {
 
   async crear(): Promise<void> {
     this.intentoEnviar.set(true);
-    if (!this.fotosCompletas()) return;
+    if (!this.fotosCompletas() || !this.fotoTableroValida()) return;
     const cliente = this.clienteSeleccionado();
     const moto = this.motoSeleccionada();
     const asesorId = this.auth.usuario()?.id;
@@ -494,7 +518,9 @@ export class OtNuevaComponent implements OnInit {
       fotoIngreso: this.form.fotoIngreso,
       fotoIngresoTrasera: this.form.fotoIngresoTrasera,
       fotoIngresoLateralIzq: this.form.fotoIngresoLateralIzq,
-      fotoIngresoLateralDer: this.form.fotoIngresoLateralDer
+      fotoIngresoLateralDer: this.form.fotoIngresoLateralDer,
+      fotoTablero: this.form.fotoTablero,
+      tableroNoEnciende: this.form.tableroNoEnciende
     });
     this.otCreada.set(ot);
     this.paso.set('mecanico');

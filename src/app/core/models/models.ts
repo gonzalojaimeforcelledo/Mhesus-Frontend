@@ -78,6 +78,8 @@ export interface OrdenTrabajo {
   fotoIngresoTrasera?: string | null;
   fotoIngresoLateralIzq?: string | null;
   fotoIngresoLateralDer?: string | null;
+  fotoTablero?: string | null;
+  tableroNoEnciende?: boolean;
 }
 
 export interface Diagnostico {

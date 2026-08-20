@@ -8,7 +8,6 @@ import { EstadoBadgeComponent } from '../../shared/components/estado-badge.compo
 import { FotoCapturaComponent } from '../../shared/components/foto-captura.component';
 import { PasoProceso, ProcesoStepperComponent } from '../../shared/components/proceso-stepper.component';
 import { EstadoOT, EstadoPedido, ItemCotizacion, OrdenTrabajo, Producto, SECUENCIA_ESTADOS_OT } from '../../core/models/models';
-import { siguienteEstado } from '../../core/services/ot-state-machine';
 import { NivelProducto, nivelVistaProducto } from '../../core/services/permissions';
 import { descargarOtPdf } from './ot-pdf.util';
 
@@ -96,13 +95,15 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
               <button (click)="asignar(o.id)" [disabled]="!mecanicoElegido" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900 disabled:opacity-40">Asignar</button>
             }
 
-            @if (siguiente() && puedeAvanzar()) {
-              <button
-                (click)="avanzar(o.id)"
-                class="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                [class]="esMecanicoAsignado() && trabajoEnCurso() ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-navy-700 hover:bg-navy-900'"
-              >
-                {{ etiquetaAvanzar(o) }}
+            @if (esMecanicoAsignado() && trabajoEnCurso()) {
+              <button (click)="avanzar(o.id)" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium">
+                ✓ Marcar servicio concluido
+              </button>
+            }
+
+            @if (o.estado === 'Control de calidad' && esJefeTaller()) {
+              <button (click)="aprobarCalidad(o.id)" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium">
+                ✓ Aprobar control de calidad
               </button>
             }
 
@@ -407,7 +408,6 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
   pedidosPendientesCount = computed(() => this.pedidos().filter((p) => p.estado !== 'Despachado').length);
   cotizacion = computed(() => this.store.cotizacionDeOT(this.otId()));
   auditoria = computed(() => this.store.auditoria().filter((a) => a.otId === this.otId()));
-  siguiente = computed(() => (this.ot() ? siguienteEstado(this.ot()!.estado) : null));
 
   tiempoServicio = computed(() => {
     const o = this.ot();
@@ -497,18 +497,7 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     const o = this.ot();
     return !!o && !!o.trabajoIniciadoEn && !o.trabajoFinalizadoEn;
   });
-  puedeAvanzar(): boolean {
-    const o = this.ot();
-    if (!o) return false;
-    if (this.esRecepcion()) return true;
-    if (this.esMecanicoAsignado()) return this.trabajoEnCurso() || ['Asignada', 'Pedido de repuestos', 'En diagnóstico', 'En ejecución'].includes(o.estado);
-    if (this.auth.rol() === 'jefe_taller') return o.estado === 'Control de calidad';
-    return false;
-  }
-  etiquetaAvanzar(o: OrdenTrabajo): string {
-    if (this.esMecanicoAsignado() && this.trabajoEnCurso()) return '✓ Marcar servicio concluido';
-    return `Avanzar a "${this.siguiente()}"`;
-  }
+  esJefeTaller(): boolean { return this.auth.rol() === 'jefe_taller'; }
   puedeDiagnosticar(): boolean { return this.esMecanicoAsignado(); }
   puedeGenerarPedido(): boolean { return this.esMecanicoAsignado(); }
   puedeDespachar(): boolean { return this.auth.rol() === 'almacen'; }
@@ -529,6 +518,11 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     const res = debeFinalizar
       ? await this.store.finalizarServicioYAvanzar(otId, this.uid())
       : await this.store.avanzarEstadoOT(otId, this.uid());
+    this.mensaje.set(res.ok ? null : res.error ?? null);
+  }
+
+  async aprobarCalidad(otId: string): Promise<void> {
+    const res = await this.store.aprobarControlCalidad(otId, this.uid());
     this.mensaje.set(res.ok ? null : res.error ?? null);
   }
 

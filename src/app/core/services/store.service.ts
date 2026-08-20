@@ -185,6 +185,17 @@ export class StoreService {
     }
   }
 
+  /** El Jefe de Taller aprueba el control de calidad: la OT pasa a "Lista para entrega". */
+  async aprobarControlCalidad(otId: string, _usuarioId: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.api.patch(`/ot/${otId}/aprobar-calidad`);
+      await Promise.all([this.cargarOts(), this.cargarAuditoria()]);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: this.mensajeError(err) };
+    }
+  }
+
   async cerrarOT(otId: string, usuarioId: string): Promise<{ ok: boolean; error?: string }> {
     return this.cambiarEstadoOT(otId, 'Cerrada', usuarioId);
   }

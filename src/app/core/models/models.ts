@@ -75,6 +75,9 @@ export interface OrdenTrabajo {
   trabajoIniciadoEn: string | null;
   trabajoFinalizadoEn: string | null;
   fotoIngreso?: string | null;
+  fotoIngresoTrasera?: string | null;
+  fotoIngresoLateralIzq?: string | null;
+  fotoIngresoLateralDer?: string | null;
 }
 
 export interface Diagnostico {

@@ -59,10 +59,23 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
             </div>
           </div>
 
-          @if (o.fotoIngreso) {
+          @if (o.fotoIngreso || o.fotoIngresoTrasera || o.fotoIngresoLateralIzq || o.fotoIngresoLateralDer) {
             <div class="mt-4 pt-4 border-t border-ink-100">
-              <p class="text-xs text-ink-500 mb-2">Foto de ingreso</p>
-              <img [src]="o.fotoIngreso" alt="Foto de ingreso de la moto" class="h-28 rounded-lg border border-ink-100 object-cover" />
+              <p class="text-xs text-ink-500 mb-2">Fotos de ingreso (4 caras)</p>
+              <div class="flex flex-wrap gap-2">
+                @if (o.fotoIngreso) {
+                  <div><img [src]="o.fotoIngreso" alt="Frontal" class="h-28 rounded-lg border border-ink-100 object-cover" /><p class="text-[11px] text-ink-400 mt-1 text-center">Frontal</p></div>
+                }
+                @if (o.fotoIngresoTrasera) {
+                  <div><img [src]="o.fotoIngresoTrasera" alt="Trasera" class="h-28 rounded-lg border border-ink-100 object-cover" /><p class="text-[11px] text-ink-400 mt-1 text-center">Trasera</p></div>
+                }
+                @if (o.fotoIngresoLateralIzq) {
+                  <div><img [src]="o.fotoIngresoLateralIzq" alt="Lateral izquierdo" class="h-28 rounded-lg border border-ink-100 object-cover" /><p class="text-[11px] text-ink-400 mt-1 text-center">Lateral izq.</p></div>
+                }
+                @if (o.fotoIngresoLateralDer) {
+                  <div><img [src]="o.fotoIngresoLateralDer" alt="Lateral derecho" class="h-28 rounded-lg border border-ink-100 object-cover" /><p class="text-[11px] text-ink-400 mt-1 text-center">Lateral der.</p></div>
+                }
+              </div>
             </div>
           }
 

@@ -139,7 +139,8 @@ export class StoreService {
   // ---------- OT ----------
   async crearOT(datos: {
     clienteId: string; motoId: string; asesorId: string; nivelCombustible: NivelCombustible;
-    observacionCliente: string; observacionAsesor?: string; servicioARealizar: string; kmActual?: number; fotoIngreso?: string | null;
+    observacionCliente: string; observacionAsesor?: string; servicioARealizar: string; kmActual?: number;
+    fotoIngreso?: string | null; fotoIngresoTrasera?: string | null; fotoIngresoLateralIzq?: string | null; fotoIngresoLateralDer?: string | null;
   }): Promise<OrdenTrabajo> {
     const nueva = await this.api.post<OrdenTrabajo>('/ot', datos);
     await Promise.all([this.cargarOts(), this.cargarMotos(), this.cargarAuditoria()]);

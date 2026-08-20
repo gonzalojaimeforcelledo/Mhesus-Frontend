@@ -162,10 +162,6 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
               <textarea [(ngModel)]="form.observacionCliente" name="observacionCliente" rows="2" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" placeholder="Ej. Ruido extraño al frenar"></textarea>
             </div>
             <div>
-              <label class="text-sm font-medium text-ink-700">Observación del asesor</label>
-              <textarea [(ngModel)]="form.observacionAsesor" name="observacionAsesor" rows="2" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" placeholder="Lo que el asesor nota al revisar la moto en recepción"></textarea>
-            </div>
-            <div>
               <label class="text-sm font-medium text-ink-700">Servicio a realizar</label>
               <input [(ngModel)]="form.servicioARealizar" name="servicioARealizar" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" placeholder="Ej. Mantenimiento 5,000 km" />
             </div>
@@ -193,13 +189,35 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
               </div>
             </div>
 
-            <app-foto-captura
-              label="Foto de ingreso de la moto (obligatoria)" textoBoton="Tomar o subir foto de ingreso"
-              [valor]="form.fotoIngreso" (valorChange)="form.fotoIngreso = $event"
-            />
-            @if (intentoEnviar() && !form.fotoIngreso) {
-              <p class="text-sm text-crimson-500 -mt-3">Falta la foto de ingreso — es obligatoria para crear la OT.</p>
-            }
+            <div>
+              <label class="text-sm font-medium text-ink-700 block mb-2">Fotos de las 4 caras de la moto (obligatorias)</label>
+              <div class="grid sm:grid-cols-2 gap-4">
+                <app-foto-captura
+                  label="Frontal" textoBoton="Tomar o subir foto frontal"
+                  [valor]="form.fotoIngreso" (valorChange)="form.fotoIngreso = $event"
+                />
+                <app-foto-captura
+                  label="Trasera" textoBoton="Tomar o subir foto trasera"
+                  [valor]="form.fotoIngresoTrasera" (valorChange)="form.fotoIngresoTrasera = $event"
+                />
+                <app-foto-captura
+                  label="Lateral izquierdo" textoBoton="Tomar o subir foto lateral izquierdo"
+                  [valor]="form.fotoIngresoLateralIzq" (valorChange)="form.fotoIngresoLateralIzq = $event"
+                />
+                <app-foto-captura
+                  label="Lateral derecho" textoBoton="Tomar o subir foto lateral derecho"
+                  [valor]="form.fotoIngresoLateralDer" (valorChange)="form.fotoIngresoLateralDer = $event"
+                />
+              </div>
+              @if (intentoEnviar() && !fotosCompletas()) {
+                <p class="text-sm text-crimson-500 mt-2">Faltan fotos — las 4 caras de la moto son obligatorias para crear la OT.</p>
+              }
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-ink-700">Observación del asesor</label>
+              <textarea [(ngModel)]="form.observacionAsesor" name="observacionAsesor" rows="2" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" placeholder="Lo que el asesor nota al revisar la moto en recepción"></textarea>
+            </div>
 
             <div class="flex justify-end gap-3 pt-2">
               <a routerLink="/ot" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500">Cancelar</a>
@@ -264,10 +282,17 @@ export class OtNuevaComponent implements OnInit {
 
   nuevoCliente = { nombres: '', apellidos: '', dni: '', celular: '' };
   nuevaMoto = { marca: '', modelo: '', anio: new Date().getFullYear() };
-  form: { observacionCliente: string; observacionAsesor: string; servicioARealizar: string; nivelCombustible: NivelCombustible; kmActual: number | null; fotoIngreso: string | null } = {
-    observacionCliente: '', observacionAsesor: '', servicioARealizar: '', nivelCombustible: '1/2', kmActual: null, fotoIngreso: null
+  form: {
+    observacionCliente: string; observacionAsesor: string; servicioARealizar: string; nivelCombustible: NivelCombustible; kmActual: number | null;
+    fotoIngreso: string | null; fotoIngresoTrasera: string | null; fotoIngresoLateralIzq: string | null; fotoIngresoLateralDer: string | null;
+  } = {
+    observacionCliente: '', observacionAsesor: '', servicioARealizar: '', nivelCombustible: '1/2', kmActual: null,
+    fotoIngreso: null, fotoIngresoTrasera: null, fotoIngresoLateralIzq: null, fotoIngresoLateralDer: null
   };
   intentoEnviar = signal(false);
+  fotosCompletas(): boolean {
+    return !!this.form.fotoIngreso && !!this.form.fotoIngresoTrasera && !!this.form.fotoIngresoLateralIzq && !!this.form.fotoIngresoLateralDer;
+  }
 
   constructor(public store: StoreService, private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
 
@@ -452,7 +477,7 @@ export class OtNuevaComponent implements OnInit {
 
   async crear(): Promise<void> {
     this.intentoEnviar.set(true);
-    if (!this.form.fotoIngreso) return;
+    if (!this.fotosCompletas()) return;
     const cliente = this.clienteSeleccionado();
     const moto = this.motoSeleccionada();
     const asesorId = this.auth.usuario()?.id;
@@ -466,7 +491,10 @@ export class OtNuevaComponent implements OnInit {
       observacionAsesor: this.form.observacionAsesor,
       servicioARealizar: this.form.servicioARealizar,
       kmActual: this.form.kmActual ?? undefined,
-      fotoIngreso: this.form.fotoIngreso
+      fotoIngreso: this.form.fotoIngreso,
+      fotoIngresoTrasera: this.form.fotoIngresoTrasera,
+      fotoIngresoLateralIzq: this.form.fotoIngresoLateralIzq,
+      fotoIngresoLateralDer: this.form.fotoIngresoLateralDer
     });
     this.otCreada.set(ot);
     this.paso.set('mecanico');

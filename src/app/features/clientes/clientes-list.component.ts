@@ -62,10 +62,10 @@ import { permisoDe } from '../../core/services/permissions';
         <div class="flex items-center gap-3 px-5 py-4 border-b border-ink-100 flex-wrap">
           <div class="flex items-center gap-3 flex-1 min-w-[220px]">
             <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input [(ngModel)]="filtro" placeholder="Buscar por placa, nombre o DNI..." class="w-full text-sm outline-none" />
+            <input [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar por placa, nombre o DNI..." class="w-full text-sm outline-none" />
           </div>
           <label class="flex items-center gap-2 text-xs font-medium text-ink-500 cursor-pointer select-none shrink-0">
-            <input type="checkbox" [(ngModel)]="soloVariasMotos" class="rounded border-ink-100 accent-navy-700" />
+            <input type="checkbox" [ngModel]="soloVariasMotos()" (ngModelChange)="soloVariasMotos.set($event)" class="rounded border-ink-100 accent-navy-700" />
             Solo dueños con más de una moto
           </label>
         </div>
@@ -108,8 +108,8 @@ import { permisoDe } from '../../core/services/permissions';
   `
 })
 export class ClientesListComponent implements OnInit {
-  filtro = '';
-  soloVariasMotos = false;
+  filtro = signal('');
+  soloVariasMotos = signal(false);
   mostrarForm = signal(false);
 
   nuevo = { dni: '', nombres: '', apellidos: '', celular: '', direccion: '' };
@@ -141,7 +141,7 @@ export class ClientesListComponent implements OnInit {
   );
 
   motosFiltradas = computed(() => {
-    const q = this.filtro.trim().toLowerCase();
+    const q = this.filtro().trim().toLowerCase();
     let filas = this.todasLasFilas();
     if (q) {
       filas = filas.filter(({ moto, cliente }) =>
@@ -150,7 +150,7 @@ export class ClientesListComponent implements OnInit {
         `${cliente?.nombres ?? ''} ${cliente?.apellidos ?? ''}`.toLowerCase().includes(q)
       );
     }
-    if (this.soloVariasMotos) {
+    if (this.soloVariasMotos()) {
       filas = filas.filter((f) => f.totalMotosDelDueno > 1);
     }
     return filas;

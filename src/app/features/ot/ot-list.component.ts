@@ -30,8 +30,8 @@ import { permisoDe } from '../../core/services/permissions';
       <div class="panel px-4">
         <div class="flex flex-wrap items-center gap-3 py-3 border-b border-ink-100">
           <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input [(ngModel)]="filtro" placeholder="Buscar por N° de OT, placa o cliente..." class="flex-1 min-w-[200px] text-sm outline-none" />
-          <select [(ngModel)]="filtroEstado" class="text-sm rounded-lg border border-ink-100 px-3 py-1.5 shrink-0">
+          <input [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar por N° de OT, placa o cliente..." class="flex-1 min-w-[200px] text-sm outline-none" />
+          <select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" class="text-sm rounded-lg border border-ink-100 px-3 py-1.5 shrink-0">
             <option [ngValue]="null">Todos los estados</option>
             @for (e of estados; track e) { <option [ngValue]="e">{{ e }}</option> }
           </select>
@@ -69,8 +69,8 @@ import { permisoDe } from '../../core/services/permissions';
 })
 export class OtListComponent {
   estados: EstadoOT[] = SECUENCIA_ESTADOS_OT;
-  filtro = '';
-  filtroEstado: EstadoOT | null = null;
+  filtro = signal('');
+  filtroEstado = signal<EstadoOT | null>(null);
 
   constructor(public store: StoreService, private auth: AuthService, private router: Router) {}
 
@@ -86,9 +86,10 @@ export class OtListComponent {
   });
 
   otsFiltradas = computed(() => {
-    const q = this.filtro.trim().toLowerCase();
+    const q = this.filtro().trim().toLowerCase();
     let lista = this.baseOTs();
-    if (this.filtroEstado) lista = lista.filter((o) => o.estado === this.filtroEstado);
+    const estado = this.filtroEstado();
+    if (estado) lista = lista.filter((o) => o.estado === estado);
     if (!q) return lista;
     return lista.filter((o) =>
       o.numeroOT.toLowerCase().includes(q) ||

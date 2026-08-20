@@ -80,7 +80,7 @@ import { Producto } from '../../core/models/models';
       @if (nivel() !== 'solo_nombre' || true) {
         <div class="panel flex items-center gap-3 px-4 py-3">
           <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input [(ngModel)]="filtro" placeholder="Buscar por código o nombre..." class="w-full text-sm outline-none" />
+          <input [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar por código o nombre..." class="w-full text-sm outline-none" />
         </div>
       }
 
@@ -275,7 +275,7 @@ import { Producto } from '../../core/models/models';
 })
 export class AlmacenComponent {
   tab = signal<'productos' | 'movimientos'>('productos');
-  filtro = '';
+  filtro = signal('');
   mostrarForm = signal(false);
   stockAbierto = signal<string | null>(null);
   menuAbierto = signal<string | null>(null);
@@ -293,7 +293,7 @@ export class AlmacenComponent {
   nivel = computed<NivelProducto>(() => nivelVistaProducto(this.auth.rol()!));
 
   productosFiltrados = computed(() => {
-    const q = this.filtro.trim().toLowerCase();
+    const q = this.filtro().trim().toLowerCase();
     const lista = this.store.productos();
     if (!q) return lista;
     return lista.filter((p) => p.codigo.toLowerCase().includes(q) || p.nombre.toLowerCase().includes(q));

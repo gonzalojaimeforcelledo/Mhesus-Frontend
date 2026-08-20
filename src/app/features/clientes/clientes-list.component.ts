@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { StoreService } from '../../core/services/store.service';
 import { AuthService } from '../../core/services/auth.service';
 import { permisoDe } from '../../core/services/permissions';
+import { Cliente } from '../../core/models/models';
 
 @Component({
   selector: 'app-clientes-list',
@@ -71,37 +72,66 @@ import { permisoDe } from '../../core/services/permissions';
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-left text-ink-500 border-b border-ink-100">
-                <th class="py-2.5 px-5 font-medium">Placa</th>
-                <th class="py-2.5 px-5 font-medium">Moto lineal</th>
-                <th class="py-2.5 px-5 font-medium">Dueño</th>
-                <th class="py-2.5 px-5 font-medium">DNI</th>
-                <th class="py-2.5 px-5 font-medium">Celular</th>
-                <th class="py-2.5 px-5 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (fila of motosFiltradas(); track fila.moto.id) {
-                <tr [routerLink]="['/motos', fila.moto.id, 'historial']" class="border-b border-ink-50 hover:bg-ink-50/60 cursor-pointer">
-                  <td class="py-3 px-5 font-mono font-medium text-brand-700">{{ fila.moto.placa }}</td>
-                  <td class="py-3 px-5 text-ink-900">{{ fila.moto.marca }} {{ fila.moto.modelo }} · {{ fila.moto.anio }}</td>
-                  <td class="py-3 px-5 text-ink-900">
-                    {{ fila.cliente?.nombres }} {{ fila.cliente?.apellidos }}
-                    @if (fila.totalMotosDelDueno > 1) {
-                      <span class="ml-1.5 text-xs font-medium text-navy-700 bg-navy-500/10 rounded-full px-2 py-0.5">{{ fila.totalMotosDelDueno }} motos</span>
-                    }
-                  </td>
-                  <td class="py-3 px-5 text-ink-500 font-mono">{{ fila.cliente?.dni }}</td>
-                  <td class="py-3 px-5 text-ink-500">{{ fila.cliente?.celular }}</td>
-                  <td class="py-3 px-5 text-brand-700 text-xs font-medium whitespace-nowrap">Ver historial →</td>
+          @if (soloVariasMotos()) {
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-ink-500 border-b border-ink-100">
+                  <th class="py-2.5 px-5 font-medium">Dueño</th>
+                  <th class="py-2.5 px-5 font-medium">DNI</th>
+                  <th class="py-2.5 px-5 font-medium">Celular</th>
+                  <th class="py-2.5 px-5 font-medium">Motos registradas</th>
+                  <th class="py-2.5 px-5 font-medium"></th>
                 </tr>
-              } @empty {
-                <tr><td colspan="6" class="py-8 text-center text-ink-500">No se encontraron motos lineales.</td></tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (d of duenosFiltrados(); track d.cliente.id) {
+                  <tr [routerLink]="['/clientes', d.cliente.id, 'motos']" class="border-b border-ink-50 hover:bg-ink-50/60 cursor-pointer">
+                    <td class="py-3 px-5 text-ink-900">{{ d.cliente.nombres }} {{ d.cliente.apellidos }}</td>
+                    <td class="py-3 px-5 text-ink-500 font-mono">{{ d.cliente.dni }}</td>
+                    <td class="py-3 px-5 text-ink-500">{{ d.cliente.celular }}</td>
+                    <td class="py-3 px-5">
+                      <span class="text-xs font-medium text-navy-700 bg-navy-500/10 rounded-full px-2 py-0.5">{{ d.total }} motos</span>
+                    </td>
+                    <td class="py-3 px-5 text-brand-700 text-xs font-medium whitespace-nowrap">Ver motos →</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="py-8 text-center text-ink-500">No hay dueños con más de una moto registrada.</td></tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-ink-500 border-b border-ink-100">
+                  <th class="py-2.5 px-5 font-medium">Placa</th>
+                  <th class="py-2.5 px-5 font-medium">Moto lineal</th>
+                  <th class="py-2.5 px-5 font-medium">Dueño</th>
+                  <th class="py-2.5 px-5 font-medium">DNI</th>
+                  <th class="py-2.5 px-5 font-medium">Celular</th>
+                  <th class="py-2.5 px-5 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of motosFiltradas(); track fila.moto.id) {
+                  <tr [routerLink]="['/motos', fila.moto.id, 'historial']" class="border-b border-ink-50 hover:bg-ink-50/60 cursor-pointer">
+                    <td class="py-3 px-5 font-mono font-medium text-brand-700">{{ fila.moto.placa }}</td>
+                    <td class="py-3 px-5 text-ink-900">{{ fila.moto.marca }} {{ fila.moto.modelo }} · {{ fila.moto.anio }}</td>
+                    <td class="py-3 px-5 text-ink-900">
+                      {{ fila.cliente?.nombres }} {{ fila.cliente?.apellidos }}
+                      @if (fila.totalMotosDelDueno > 1) {
+                        <span class="ml-1.5 text-xs font-medium text-navy-700 bg-navy-500/10 rounded-full px-2 py-0.5">{{ fila.totalMotosDelDueno }} motos</span>
+                      }
+                    </td>
+                    <td class="py-3 px-5 text-ink-500 font-mono">{{ fila.cliente?.dni }}</td>
+                    <td class="py-3 px-5 text-ink-500">{{ fila.cliente?.celular }}</td>
+                    <td class="py-3 px-5 text-brand-700 text-xs font-medium whitespace-nowrap">Ver historial →</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="py-8 text-center text-ink-500">No se encontraron motos lineales.</td></tr>
+                }
+              </tbody>
+            </table>
+          }
         </div>
       </div>
     </div>
@@ -150,10 +180,28 @@ export class ClientesListComponent implements OnInit {
         `${cliente?.nombres ?? ''} ${cliente?.apellidos ?? ''}`.toLowerCase().includes(q)
       );
     }
-    if (this.soloVariasMotos()) {
-      filas = filas.filter((f) => f.totalMotosDelDueno > 1);
-    }
     return filas;
+  });
+
+  /** Vista agrupada por dueño (una fila por cliente, no por moto) — se usa cuando el filtro "Solo dueños con más de una moto" está activo. */
+  duenosFiltrados = computed(() => {
+    const q = this.filtro().trim().toLowerCase();
+    const vistos = new Set<string>();
+    const resultado: { cliente: Cliente; total: number }[] = [];
+    for (const moto of this.store.motos()) {
+      if (vistos.has(moto.clienteId)) continue;
+      const total = this.conteoPorCliente().get(moto.clienteId) ?? 1;
+      if (total <= 1) continue;
+      const cliente = this.store.cliente(moto.clienteId);
+      if (!cliente) continue;
+      if (q) {
+        const coincide = cliente.dni.includes(q) || `${cliente.nombres} ${cliente.apellidos}`.toLowerCase().includes(q);
+        if (!coincide) continue;
+      }
+      vistos.add(moto.clienteId);
+      resultado.push({ cliente, total });
+    }
+    return resultado;
   });
 
   soloLectura = computed(() => {

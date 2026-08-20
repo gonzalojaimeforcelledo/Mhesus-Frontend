@@ -26,6 +26,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/clientes/clientes-list.component').then((m) => m.ClientesListComponent)
       },
       {
+        path: 'clientes/:id/motos',
+        canActivate: [moduloGuard('clientes')],
+        loadComponent: () => import('./features/clientes/cliente-motos.component').then((m) => m.ClienteMotosComponent)
+      },
+      {
         path: 'ot',
         canActivate: [moduloGuard('ot')],
         loadComponent: () => import('./features/ot/ot-list.component').then((m) => m.OtListComponent)

@@ -95,6 +95,17 @@ export class StoreService {
     }
   }
 
+  /** Igual que buscarClientePorDni, pero consultando al backend en vez de la lista en memoria — clientes creados hace instantes en otra sesión igual aparecen. */
+  async buscarClientesPorDniEnServidor(query: string): Promise<Cliente[]> {
+    const q = query.trim();
+    if (q.length < 3) return [];
+    try {
+      return await this.api.get<Cliente[]>('/clientes', { q });
+    } catch {
+      return [];
+    }
+  }
+
   /** Sugerencias en vivo mientras se escribe la placa (coincidencia parcial), para autocompletar antes de tener el número completo. */
   motosPorPlacaParcial(query: string, limite = 5): Motocicleta[] {
     const q = query.trim().toUpperCase();

@@ -39,7 +39,7 @@ import { ThemeService } from '../../core/services/theme.service';
               MHESUS Sistema Interno es una herramienta de uso exclusivo para el personal
               del taller MHESUS (recepción, mecánica, almacén, jefatura de taller y
               administración), destinada a gestionar órdenes de trabajo, clientes,
-              motocicletas, inventario y cotizaciones. No está dirigido al público general
+              motos lineales, inventario y cotizaciones. No está dirigido al público general
               ni sustituye ningún canal de atención al cliente.
             </p>
           </section>
@@ -69,7 +69,7 @@ import { ThemeService } from '../../core/services/theme.service';
             <h2 class="font-display font-700 text-lg text-ink-900 mb-2">4. Datos personales</h2>
             <p>
               El sistema almacena datos de clientes (nombre, DNI, celular, dirección) y de
-              sus motocicletas, con el único fin de gestionar el servicio del taller. Estos
+              sus motos lineales, con el único fin de gestionar el servicio del taller. Estos
               datos no se comparten con terceros salvo obligación legal, y se conservan
               mientras exista una relación comercial vigente con el cliente o mientras sea
               necesario para fines administrativos y contables.

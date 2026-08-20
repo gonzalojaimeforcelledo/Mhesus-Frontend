@@ -30,7 +30,7 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
       <!-- Paso 1: motocicleta (por placa) -->
       @if (paso() === 'moto') {
         <div class="panel p-5">
-          <h2 class="font-display font-600 text-ink-900 mb-1">Motocicleta</h2>
+          <h2 class="font-display font-600 text-ink-900 mb-1">Moto lineal</h2>
           <p class="text-sm text-ink-500 mb-4">Ingresa el número de placa: si ya está registrada, reconocemos sus datos y a su dueño automáticamente.</p>
 
           @if (!motoSeleccionada()) {
@@ -89,6 +89,7 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
                 @if (modoAlta() === 'dni') {
                   <input
                     [(ngModel)]="dniBusqueda" name="dniBusqueda" inputmode="numeric" maxlength="8" placeholder="DNI del cliente..."
+                    (ngModelChange)="onDniBusquedaChange($event)"
                     class="w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500 font-mono"
                   />
                   @if (sugerenciasClientes().length) {
@@ -148,7 +149,7 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
         <div class="panel p-5">
           <div class="flex items-center justify-between mb-1">
             <h2 class="font-display font-600 text-ink-900">Detalle de ingreso</h2>
-            <button type="button" (click)="irAPaso('moto')" class="text-xs font-medium text-brand-700 hover:underline">← Cambiar motocicleta</button>
+            <button type="button" (click)="irAPaso('moto')" class="text-xs font-medium text-brand-700 hover:underline">← Cambiar moto lineal</button>
           </div>
           <p class="text-sm text-ink-500 mb-4">
             {{ clienteSeleccionado()!.nombres }} {{ clienteSeleccionado()!.apellidos }} ·
@@ -235,7 +236,7 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
 })
 export class OtNuevaComponent implements OnInit {
   pasosInfo: { id: Paso; etiqueta: string }[] = [
-    { id: 'moto', etiqueta: 'Motocicleta' },
+    { id: 'moto', etiqueta: 'Moto lineal' },
     { id: 'detalle', etiqueta: 'Detalle de ingreso' },
     { id: 'mecanico', etiqueta: 'Asignar mecánico' }
   ];
@@ -318,10 +319,24 @@ export class OtNuevaComponent implements OnInit {
     return this.store.motosPorPlacaParcial(this.placa);
   });
 
-  sugerenciasClientes = computed(() => {
-    if (this.dniBusqueda.length < 3) return [];
-    return this.store.clientes().filter((c) => c.dni.startsWith(this.dniBusqueda)).slice(0, 5);
-  });
+  sugerenciasClientes = signal<Cliente[]>([]);
+  private debounceDni?: ReturnType<typeof setTimeout>;
+
+  onDniBusquedaChange(valor: string): void {
+    this.dniBusqueda = valor;
+    if (this.debounceDni) clearTimeout(this.debounceDni);
+    if (valor.trim().length < 3) {
+      this.sugerenciasClientes.set([]);
+      return;
+    }
+    const consulta = valor;
+    this.debounceDni = setTimeout(async () => {
+      const resultado = await this.store.buscarClientesPorDniEnServidor(consulta);
+      if (this.dniBusqueda === consulta) {
+        this.sugerenciasClientes.set(resultado.slice(0, 5));
+      }
+    }, 350);
+  }
 
   otAsignada = computed(() => {
     const ot = this.otCreada();

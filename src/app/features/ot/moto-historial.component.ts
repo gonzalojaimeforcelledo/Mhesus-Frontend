@@ -71,7 +71,7 @@ import { EstadoBadgeComponent } from '../../shared/components/estado-badge.compo
           </ul>
         </div>
       } @else {
-        <p class="text-sm text-ink-500">No se encontró información de esta motocicleta.</p>
+        <p class="text-sm text-ink-500">No se encontró información de esta moto lineal.</p>
       }
     </div>
   `

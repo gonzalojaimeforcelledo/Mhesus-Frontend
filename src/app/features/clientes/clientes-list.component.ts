@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -107,7 +107,7 @@ import { permisoDe } from '../../core/services/permissions';
     </div>
   `
 })
-export class ClientesListComponent {
+export class ClientesListComponent implements OnInit {
   filtro = '';
   soloVariasMotos = false;
   mostrarForm = signal(false);
@@ -115,6 +115,14 @@ export class ClientesListComponent {
   nuevo = { dni: '', nombres: '', apellidos: '', celular: '', direccion: '' };
 
   constructor(public store: StoreService, private auth: AuthService) {}
+
+  ngOnInit(): void {
+    // Refresca al abrir esta pantalla — es la búsqueda de referencia para saber
+    // si una placa ya existe, así que no debe depender de datos en memoria que
+    // puedan haber quedado desactualizados desde que se inició sesión.
+    this.store.cargarClientes();
+    this.store.cargarMotos();
+  }
 
   private conteoPorCliente = computed(() => {
     const mapa = new Map<string, number>();

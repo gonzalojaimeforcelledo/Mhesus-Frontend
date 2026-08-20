@@ -263,6 +263,13 @@ export class OtNuevaComponent implements OnInit {
   constructor(public store: StoreService, private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    // Refresca clientes y motos al abrir esta pantalla — es clave para que la
+    // detección de "placa ya registrada" sea siempre correcta, incluso si el
+    // registro se hizo hace rato, en otra pestaña, o por otro usuario, y esta
+    // sesión todavía tenía en memoria los datos de cuando inició sesión.
+    this.store.cargarClientes();
+    this.store.cargarMotos();
+
     const clienteId = this.route.snapshot.queryParamMap.get('clienteId');
     const motoId = this.route.snapshot.queryParamMap.get('motoId');
     if (motoId) {

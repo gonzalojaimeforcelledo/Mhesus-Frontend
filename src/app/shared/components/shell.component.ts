@@ -97,7 +97,8 @@ const NAV: NavItem[] = [
 
       <!-- Contenido -->
       <div class="flex-1 flex flex-col min-w-0" [class.lg:ml-[280px]]="!colapsado()" [class.lg:ml-[100px]]="colapsado()">
-        <header class="h-16 sticky top-3 z-20 mx-3 bg-surface/90 backdrop-blur rounded-2xl shadow-lg border border-ink-100 flex items-center justify-between gap-3 px-4 sm:px-6">          <div class="flex items-center gap-3 min-w-0">
+        <header class="h-16 sticky top-3 z-20 mx-3 lg:mr-3 rounded-2xl bg-surface/90 backdrop-blur border border-ink-100 shadow-sm flex items-center justify-between gap-3 px-4 sm:px-6">
+          <div class="flex items-center gap-3 min-w-0">
             <button type="button" (click)="mobileAbierto.set(true)" class="lg:hidden p-2 -ml-2 rounded-lg text-ink-500 hover:bg-ink-100 shrink-0">
               <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
@@ -135,8 +136,9 @@ const NAV: NavItem[] = [
                 <!-- Backdrop invisible: cierra el panel al tocar fuera -->
                 <div class="fixed inset-0 z-30" (click)="notifAbiertas.set(false)"></div>
 
-                <div class="fixed sm:absolute inset-x-4 sm:inset-x-auto top-16 sm:top-auto right-0 sm:mt-2.5 w-auto sm:w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto panel z-40 origin-top-right">
-                  <div class="fixed sm:absolute inset-x-4 sm:inset-x-auto top-[76px] sm:top-auto right-0 sm:mt-2.5 w-auto sm:w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto panel z-40 origin-top-right">                    <p class="text-sm font-semibold text-ink-900">Notificaciones</p>
+                <div class="fixed sm:absolute inset-x-4 sm:inset-x-auto top-[76px] sm:top-auto right-0 sm:mt-2.5 w-auto sm:w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto panel z-40 origin-top-right">
+                  <div class="flex items-center justify-between px-4 py-3 border-b border-ink-100 sticky top-0 bg-surface rounded-t-xl">
+                    <p class="text-sm font-semibold text-ink-900">Notificaciones</p>
                     @if (noLeidas() > 0) {
                       <button type="button" (click)="marcarTodasLeidas()" class="text-xs font-medium text-brand-700 hover:underline shrink-0">Marcar todas leídas</button>
                     }

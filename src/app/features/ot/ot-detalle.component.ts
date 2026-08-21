@@ -110,6 +110,10 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
                 <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
                 {{ generandoPdf() ? 'Generando...' : 'Descargar OT (PDF)' }}
               </button>
+              <button (click)="reenviarWhatsapp(o.id)" class="px-4 py-2 rounded-lg border border-emerald-500 text-emerald-600 text-sm font-medium hover:bg-emerald-500 hover:text-white transition-colors flex items-center gap-2">
+                <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.85 9.85 0 0 0 12.04 2Zm0 1.67c2.19 0 4.25.85 5.79 2.4a8.2 8.2 0 0 1 2.4 5.83c0 4.54-3.7 8.24-8.24 8.24a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.37c0-4.54 3.7-8.24 8.29-8.24Zm-3.3 4.5c-.16 0-.42.06-.65.31-.22.25-.86.84-.86 2.05 0 1.2.88 2.37 1 2.53.13.17 1.72 2.63 4.24 3.68 2.1.87 2.52.7 2.98.65.46-.04 1.48-.6 1.69-1.19.2-.58.2-1.08.14-1.19-.06-.1-.23-.16-.48-.29-.25-.12-1.48-.73-1.71-.82-.23-.08-.4-.12-.56.13-.17.25-.64.81-.79.98-.14.16-.29.18-.54.06-.25-.13-1.04-.38-1.98-1.22-.73-.65-1.22-1.46-1.37-1.71-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.44-.06-.13-.56-1.37-.78-1.87-.2-.48-.41-.42-.56-.42Z"/></svg>
+                Enviar por WhatsApp
+              </button>
             }
 
             @if (esAdministracion() && o.estado !== 'Cerrada') {
@@ -318,8 +322,9 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
                     <button type="button" (click)="quitarItemCotizacion(i)" class="text-ink-300 hover:text-crimson-500 text-xs">✕</button>
                   </div>
                 }
-                <div class="flex items-center gap-2 mt-2">
+                <div class="flex items-center gap-2 mt-2 flex-wrap">
                   <button type="button" (click)="agregarItemCotizacion()" class="text-xs font-medium text-brand-700 hover:underline">+ Agregar ítem</button>
+                  <button type="button" (click)="agregarServicioMecanico()" class="text-xs font-medium text-brand-700 hover:underline">+ Agregar servicio del mecánico (mano de obra)</button>
                   <button type="button" (click)="guardarCotizacion(o.id)" [disabled]="!cotizacionItems().length" class="ml-auto px-3 py-1.5 rounded-lg bg-navy-700 text-white text-xs font-medium hover:bg-navy-900 disabled:opacity-40">Guardar cotización</button>
                 </div>
               </div>
@@ -526,9 +531,20 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     this.estadoForzado = null;
   }
 
+  /** Botón "Enviar por WhatsApp" visible una vez la OT ya está cerrada — para reenviar sin necesidad de volver a cobrar. */
+  async reenviarWhatsapp(otId: string): Promise<void> {
+    const o = this.store.ot(otId);
+    if (!o) return;
+    await this.descargarPdf(o);
+    this.mensaje.set('PDF descargado — adjúntalo en el chat de WhatsApp que se acaba de abrir.');
+    this.enviarWhatsappCierre(otId);
+  }
+
   async cerrar(otId: string): Promise<void> {
     const res = await this.store.cerrarOT(otId, this.uid());
     if (res.ok) {
+      await this.descargarPdf(this.store.ot(otId)!);
+      this.mensaje.set('PDF descargado — adjúntalo en el chat de WhatsApp que se acaba de abrir.');
       this.enviarWhatsappCierre(otId);
     } else {
       this.mensaje.set(res.error ?? 'No se pudo cerrar la OT.');
@@ -537,11 +553,14 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
 
   /**
    * Abre WhatsApp con el mensaje de cierre ya redactado y el número del
-   * cliente ya seleccionado, para que solo falte darle "Enviar". No es 100%
-   * automático de extremo a extremo porque WhatsApp no deja mandar mensajes
-   * de negocio sin intervención humana salvo que se contrate la API oficial
-   * de WhatsApp Business (de pago, requiere cuenta verificada de Meta) — esto
-   * es lo más cercano a "automático" sin esa integración paga.
+   * cliente ya seleccionado, para que solo falte darle "Enviar". El PDF de
+   * la OT (con las sugerencias del técnico) se descarga aparte justo antes
+   * de esto — WhatsApp no permite adjuntar un archivo automáticamente desde
+   * un link, así que hay que arrastrarlo al chat manualmente una vez abierto.
+   * Tampoco es 100% automático de extremo a extremo porque WhatsApp no deja
+   * mandar mensajes de negocio sin intervención humana salvo que se contrate
+   * la API oficial de WhatsApp Business (de pago, cuenta verificada de Meta)
+   * — esto es lo más cercano a "automático" sin esa integración paga.
    */
   private enviarWhatsappCierre(otId: string): void {
     const o = this.store.ot(otId);
@@ -557,8 +576,9 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     const totalTexto = cot ? `\nTotal: S/ ${cot.montoTotal.toFixed(2)}` : '';
     const mensaje =
       `Hola ${cliente.nombres}, tu moto ${moto?.placa ?? ''} (${moto?.marca ?? ''} ${moto?.modelo ?? ''}) ` +
-      `ya está lista para recoger en MHESUS.\n` +
+      `ya está lista, el servicio se realizó con éxito.\n` +
       `OT: ${o.numeroOT}\nServicio: ${o.servicioARealizar}${totalTexto}\n` +
+      `Te comparto tu orden de trabajo en PDF con las sugerencias del técnico (adjunta abajo).\n` +
       `¡Te esperamos!`;
 
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
@@ -613,6 +633,12 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
   }
 
   agregarItemCotizacion(): void { this._cotizacionItems.update((arr) => [...arr, { descripcion: '', cantidad: 1, precioUnitario: 0 }]); }
+  /** Atajo para sumar la mano de obra / servicio del mecánico a la cotización, con precio libre para que Recepción lo complete. */
+  agregarServicioMecanico(): void {
+    const sugerencia = this.diagnostico()?.diagnostico || this.ot()?.servicioARealizar || '';
+    const descripcion = sugerencia ? `Mano de obra — ${sugerencia}` : 'Mano de obra';
+    this._cotizacionItems.update((arr) => [...arr, { descripcion, cantidad: 1, precioUnitario: 0 }]);
+  }
   quitarItemCotizacion(i: number): void { this._cotizacionItems.update((arr) => arr.filter((_, idx) => idx !== i)); }
 
   /** Trae los productos solicitados por el mecánico con su precio de catálogo, listos para cotizar. */

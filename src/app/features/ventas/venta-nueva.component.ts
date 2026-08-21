@@ -67,7 +67,7 @@ interface FilaCarrito extends ItemVenta {
           <label class="text-sm font-medium text-ink-700">Buscar producto</label>
           <div class="relative mt-1">
             <input
-              [(ngModel)]="buscarProducto" name="buscarProducto"
+              [ngModel]="buscarProducto()" (ngModelChange)="buscarProducto.set($event)" name="buscarProducto"
               class="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500"
               placeholder="Buscar por código o nombre..."
             />
@@ -143,7 +143,7 @@ export class VentaNuevaComponent implements OnInit {
   esProforma = false;
   tipo: TipoVenta = 'BOLETA';
   dniBusqueda = '';
-  buscarProducto = '';
+  buscarProducto = signal('');
   clienteElegido = signal<Cliente | undefined>(undefined);
   sugerenciasClientes = signal<Cliente[]>([]);
   carrito = signal<FilaCarrito[]>([]);
@@ -207,7 +207,7 @@ export class VentaNuevaComponent implements OnInit {
   }
 
   sugerenciasProductos = computed(() => {
-    const q = this.buscarProducto.trim().toLowerCase();
+    const q = this.buscarProducto().trim().toLowerCase();
     if (q.length < 2) return [];
     return this.store.productos()
       .filter((p) => p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q))
@@ -216,7 +216,7 @@ export class VentaNuevaComponent implements OnInit {
 
   agregarProducto(p: { id: string; nombre: string; precio: number }): void {
     this.carrito.update((filas) => [...filas, { id: `f${this.contador++}`, descripcion: p.nombre, cantidad: 1, precioUnitario: p.precio }]);
-    this.buscarProducto = '';
+    this.buscarProducto.set('');
   }
 
   cambiarCantidad(id: string, cantidad: number): void {

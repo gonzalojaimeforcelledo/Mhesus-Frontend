@@ -38,10 +38,12 @@ const NAV: NavItem[] = [
         <div class="fixed inset-0 bg-transparent z-30 lg:hidden" (click)="mobileAbierto.set(false)"></div>
       }
 
-      <!-- Sidebar: menú lateral fijo en escritorio, cajón deslizable en móvil -->
+      <!-- Sidebar: menú lateral fijo en escritorio, cajón deslizable en móvil.
+           "Flotante": separado de los bordes de la pantalla, con esquinas
+           redondeadas en las 4 puntas, en vez de ir pegado y recto al borde. -->
       <aside
-        class="fixed inset-y-0 left-0 z-40 flex flex-col bg-navy-900 text-white transition-all duration-200 ease-out w-64 lg:translate-x-0"
-        [class]="mobileAbierto() ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-3 left-3 z-40 flex flex-col bg-navy-900 text-white transition-all duration-200 ease-out w-64 rounded-2xl shadow-lg lg:translate-x-0 overflow-hidden"
+        [class]="mobileAbierto() ? 'translate-x-0' : '-translate-x-[calc(100%+0.75rem)] lg:translate-x-0'"
         [class.lg:w-64]="!colapsado()" [class.lg:w-[76px]]="colapsado()"
       >
         <div class="flex items-center gap-3 px-3 h-16 border-b border-white/10" [class.justify-center]="colapsado() && !mobileAbierto()">
@@ -94,7 +96,7 @@ const NAV: NavItem[] = [
       </aside>
 
       <!-- Contenido -->
-      <div class="flex-1 flex flex-col min-w-0" [class.lg:ml-64]="!colapsado()" [class.lg:ml-[76px]]="colapsado()">
+      <div class="flex-1 flex flex-col min-w-0" [class.lg:ml-[280px]]="!colapsado()" [class.lg:ml-[100px]]="colapsado()">
         <header class="h-16 sticky top-0 z-20 bg-surface/90 backdrop-blur border-b border-ink-100 flex items-center justify-between gap-3 px-4 sm:px-6">
           <div class="flex items-center gap-3 min-w-0">
             <button type="button" (click)="mobileAbierto.set(true)" class="lg:hidden p-2 -ml-2 rounded-lg text-ink-500 hover:bg-ink-100 shrink-0">

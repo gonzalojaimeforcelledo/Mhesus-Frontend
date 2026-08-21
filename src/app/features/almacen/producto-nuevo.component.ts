@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { StoreService } from '../../core/services/store.service';
+import { MARCAS_MOTO, MODELOS_POR_MARCA, SUBMODELOS_POR_MODELO, MarcaMoto } from '../../core/models/models';
 
 @Component({
   selector: 'app-producto-nuevo',
@@ -59,6 +60,42 @@ import { StoreService } from '../../core/services/store.service';
           <input [(ngModel)]="nuevo.stockMinimo" type="number" min="0" name="stockMinimo" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500" />
         </div>
 
+        <div class="sm:col-span-2 pt-2 border-t border-ink-100">
+          <p class="text-sm font-medium text-ink-700 mb-1">Compatibilidad con moto (opcional)</p>
+          <p class="text-xs text-ink-400 mb-3">Para qué marca, modelo, submodelo y años sirve este repuesto — ayuda a filtrar el catálogo.</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-ink-700">Marca</label>
+          <select [(ngModel)]="nuevo.marcaMoto" name="marcaMoto" (ngModelChange)="onMarcaChange()" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500">
+            <option [ngValue]="null">— Cualquiera / no aplica —</option>
+            @for (m of marcas; track m) { <option [value]="m">{{ m }}</option> }
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-ink-700">Modelo</label>
+          <select [(ngModel)]="nuevo.modeloMoto" name="modeloMoto" (ngModelChange)="onModeloChange()" [disabled]="!nuevo.marcaMoto" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500 disabled:opacity-50 disabled:bg-ink-50">
+            <option [ngValue]="null">—</option>
+            @for (m of modelosDisponibles(); track m) { <option [value]="m">{{ m }}</option> }
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-ink-700">Submodelo</label>
+          <select [(ngModel)]="nuevo.submodeloMoto" name="submodeloMoto" [disabled]="!nuevo.modeloMoto" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500 disabled:opacity-50 disabled:bg-ink-50">
+            <option [ngValue]="null">—</option>
+            @for (s of submodelosDisponibles(); track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-medium text-ink-700">Año desde</label>
+            <input [(ngModel)]="nuevo.anioDesde" type="number" name="anioDesde" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500" placeholder="Ej. 2018" />
+          </div>
+          <div>
+            <label class="text-sm font-medium text-ink-700">Año hasta</label>
+            <input [(ngModel)]="nuevo.anioHasta" type="number" name="anioHasta" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500" placeholder="Ej. 2024" />
+          </div>
+        </div>
+
         <div class="sm:col-span-2 flex justify-end gap-3 pt-2">
           <a routerLink="/almacen" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500">Cancelar</a>
           <button type="submit" [disabled]="guardando()" class="px-6 py-2.5 rounded-lg bg-navy-700 hover:bg-navy-900 disabled:opacity-50 text-white text-sm font-medium">
@@ -70,12 +107,37 @@ import { StoreService } from '../../core/services/store.service';
   `
 })
 export class ProductoNuevoComponent {
-  nuevo: { codigo: string; codigoBarras: string; nombre: string; categoria: string; lugar: string; precio: number; descuentoMaximo: number | null; stockActual: number; stockMinimo: number } = {
-    codigo: '', codigoBarras: '', nombre: '', categoria: '', lugar: '', precio: 0, descuentoMaximo: null, stockActual: 0, stockMinimo: 0
+  marcas = MARCAS_MOTO;
+
+  nuevo: {
+    codigo: string; codigoBarras: string; nombre: string; categoria: string; lugar: string; precio: number; descuentoMaximo: number | null;
+    stockActual: number; stockMinimo: number; marcaMoto: string | null; modeloMoto: string | null; submodeloMoto: string | null;
+    anioDesde: number | null; anioHasta: number | null;
+  } = {
+    codigo: '', codigoBarras: '', nombre: '', categoria: '', lugar: '', precio: 0, descuentoMaximo: null,
+    stockActual: 0, stockMinimo: 0, marcaMoto: null, modeloMoto: null, submodeloMoto: null, anioDesde: null, anioHasta: null
   };
   guardando = signal(false);
 
   constructor(private store: StoreService, private router: Router) {}
+
+  modelosDisponibles(): string[] {
+    return this.nuevo.marcaMoto ? MODELOS_POR_MARCA[this.nuevo.marcaMoto as MarcaMoto] ?? [] : [];
+  }
+
+  submodelosDisponibles(): string[] {
+    if (!this.nuevo.marcaMoto || !this.nuevo.modeloMoto) return [];
+    return SUBMODELOS_POR_MODELO[`${this.nuevo.marcaMoto}-${this.nuevo.modeloMoto}`] ?? [];
+  }
+
+  onMarcaChange(): void {
+    this.nuevo.modeloMoto = null;
+    this.nuevo.submodeloMoto = null;
+  }
+
+  onModeloChange(): void {
+    this.nuevo.submodeloMoto = null;
+  }
 
   async crear(): Promise<void> {
     if (!this.nuevo.codigo || !this.nuevo.nombre) return;

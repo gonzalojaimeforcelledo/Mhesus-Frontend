@@ -106,7 +106,38 @@ export interface Producto {
   stockActual: number;
   stockMinimo: number;
   lugar?: string; // "Ubicación" en la interfaz
+  marcaMoto?: string | null;
+  modeloMoto?: string | null;
+  submodeloMoto?: string | null;
+  anioDesde?: number | null;
+  anioHasta?: number | null;
 }
+
+/** Catálogo de marcas/modelos/submodelos de moto que maneja el taller, para el registro y filtro de productos por compatibilidad. */
+export const MARCAS_MOTO = ['Bajaj', 'TVS', 'KTM'] as const;
+export type MarcaMoto = typeof MARCAS_MOTO[number];
+
+export const MODELOS_POR_MARCA: Record<MarcaMoto, string[]> = {
+  Bajaj: ['Pulsar', 'Discover', 'Boxer', 'Dominar'],
+  TVS: ['Apache RTR', 'Apache RR', 'Raider', 'Sport', 'Stryker', 'Ronin'],
+  KTM: ['Duke', 'RC', 'Adventure']
+};
+
+export const SUBMODELOS_POR_MODELO: Record<string, string[]> = {
+  'Bajaj-Pulsar': ['125', '135', '150', 'N160', '160 NS', '180', '200 NS', 'N250', 'RS200'],
+  'Bajaj-Discover': ['100', '125', '135', '150'],
+  'Bajaj-Boxer': ['CT100', 'CT125', 'S', '150X'],
+  'Bajaj-Dominar': ['250', '400'],
+  'TVS-Apache RTR': ['160', '160 4V', '180', '200', '200 4V', '310'],
+  'TVS-Apache RR': ['310'],
+  'TVS-Raider': ['125', '125 FI'],
+  'TVS-Sport': ['100'],
+  'TVS-Stryker': ['125'],
+  'TVS-Ronin': ['225'],
+  'KTM-Duke': ['200', '250', '390', '790'],
+  'KTM-RC': ['200', '390'],
+  'KTM-Adventure': ['250', '390']
+};
 
 export type EstadoPedido = 'Solicitado' | 'Aprobado' | 'Despachado parcial' | 'Despachado' | 'Cancelado';
 
@@ -232,4 +263,21 @@ export interface ResumenDia {
   igv: number;
   porTipo: Record<string, { monto: number; cantidad: number }>;
   ultimaEmision: string | null;
+}
+
+// ---------- Deudas (Administración) ----------
+export type TipoDeuda = 'POR_COBRAR' | 'BANCO';
+
+export interface Deuda {
+  id: string;
+  tipo: TipoDeuda;
+  nombre: string;
+  descripcion: string | null;
+  clienteId: string | null;
+  montoOriginal: number;
+  montoPendiente: number;
+  fechaVencimiento: string | null;
+  estado: 'PENDIENTE' | 'PAGADA';
+  creadoPor: string;
+  creadoEn: string;
 }

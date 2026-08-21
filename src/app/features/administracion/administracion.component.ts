@@ -1,9 +1,9 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '../../core/services/store.service';
 import { NOMBRE_ROL } from '../../core/services/permissions';
-import { Rol } from '../../core/models/models';
+import { Deuda, Rol, TipoDeuda } from '../../core/models/models';
 
 @Component({
   selector: 'app-administracion',
@@ -18,6 +18,7 @@ import { Rol } from '../../core/models/models';
 
       <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 w-fit">
         <button (click)="tab.set('usuarios')" [class.bg-surface]="tab() === 'usuarios'" [class.shadow]="tab() === 'usuarios'" class="px-4 py-1.5 rounded-md text-xs font-medium">Usuarios</button>
+        <button (click)="tab.set('deudas')" [class.bg-surface]="tab() === 'deudas'" [class.shadow]="tab() === 'deudas'" class="px-4 py-1.5 rounded-md text-xs font-medium">Deudas</button>
         <button (click)="tab.set('auditoria')" [class.bg-surface]="tab() === 'auditoria'" [class.shadow]="tab() === 'auditoria'" class="px-4 py-1.5 rounded-md text-xs font-medium">Auditoría</button>
         <button (click)="tab.set('sistema')" [class.bg-surface]="tab() === 'sistema'" [class.shadow]="tab() === 'sistema'" class="px-4 py-1.5 rounded-md text-xs font-medium">Sistema</button>
       </div>
@@ -76,6 +77,73 @@ import { Rol } from '../../core/models/models';
                     }
                   </td>
                 </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (tab() === 'deudas') {
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="panel p-4">
+            <p class="text-xs text-ink-500">Total por cobrar (pendiente)</p>
+            <p class="font-display font-700 text-2xl text-amber-600 mt-1">S/ {{ totalPendientePorCobrar().toFixed(2) }}</p>
+          </div>
+          <div class="panel p-4">
+            <p class="text-xs text-ink-500">Total deuda de banco (pendiente)</p>
+            <p class="font-display font-700 text-2xl text-crimson-500 mt-1">S/ {{ totalPendienteBanco().toFixed(2) }}</p>
+          </div>
+        </div>
+
+        <div class="flex gap-1 border-b border-ink-100 mt-4">
+          <button (click)="tabDeuda.set('POR_COBRAR')" class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px" [class]="tabDeuda() === 'POR_COBRAR' ? 'border-navy-700 text-navy-700' : 'border-transparent text-ink-500'">Por cobrar</button>
+          <button (click)="tabDeuda.set('BANCO')" class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px" [class]="tabDeuda() === 'BANCO' ? 'border-navy-700 text-navy-700' : 'border-transparent text-ink-500'">De banco</button>
+        </div>
+
+        <div class="panel p-5 mt-4">
+          <h2 class="font-display font-600 text-ink-900 mb-3">{{ tabDeuda() === 'POR_COBRAR' ? 'Nueva deuda por cobrar' : 'Nueva deuda de banco' }}</h2>
+          <form (ngSubmit)="crearDeuda()" class="grid sm:grid-cols-4 gap-3">
+            <input [(ngModel)]="nuevaDeuda.nombre" name="dNombre" [placeholder]="tabDeuda() === 'POR_COBRAR' ? 'Nombre del cliente' : 'Nombre del banco/entidad'" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevaDeuda.descripcion" name="dDescripcion" placeholder="Descripción (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevaDeuda.montoOriginal" type="number" min="0" step="0.01" name="dMonto" placeholder="Monto (S/)" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevaDeuda.fechaVencimiento" type="date" name="dFecha" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <button type="submit" class="sm:col-span-4 px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900 w-fit">Registrar</button>
+          </form>
+        </div>
+
+        <div class="panel overflow-x-auto mt-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-ink-500 border-b border-ink-100">
+                <th class="py-2.5 px-4 font-medium">{{ tabDeuda() === 'POR_COBRAR' ? 'Cliente' : 'Banco/Entidad' }}</th>
+                <th class="py-2.5 px-4 font-medium">Descripción</th>
+                <th class="py-2.5 px-4 font-medium">Vencimiento</th>
+                <th class="py-2.5 px-4 font-medium">Original</th>
+                <th class="py-2.5 px-4 font-medium">Pendiente</th>
+                <th class="py-2.5 px-4 font-medium">Estado</th>
+                <th class="py-2.5 px-4 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of deudasFiltradas(); track d.id) {
+                <tr class="border-b border-ink-50" [class.opacity-50]="d.estado === 'PAGADA'">
+                  <td class="py-3 px-4 text-ink-900">{{ d.nombre }}</td>
+                  <td class="py-3 px-4 text-ink-500">{{ d.descripcion || '—' }}</td>
+                  <td class="py-3 px-4 text-ink-500">{{ d.fechaVencimiento || '—' }}</td>
+                  <td class="py-3 px-4 text-ink-500">S/ {{ d.montoOriginal.toFixed(2) }}</td>
+                  <td class="py-3 px-4 font-medium" [class]="d.estado === 'PAGADA' ? 'text-emerald-600' : 'text-amber-600'">S/ {{ d.montoPendiente.toFixed(2) }}</td>
+                  <td class="py-3 px-4">
+                    <span class="text-xs font-medium px-2.5 py-1 rounded-full" [class]="d.estado === 'PAGADA' ? 'text-emerald-600 bg-emerald-500/10' : 'text-amber-600 bg-amber-400/10'">{{ d.estado }}</span>
+                  </td>
+                  <td class="py-3 px-4 flex items-center gap-3">
+                    @if (d.estado === 'PENDIENTE') {
+                      <button (click)="abonar(d)" class="text-xs font-medium text-navy-700 hover:underline">Abonar</button>
+                    }
+                    <button (click)="store.eliminarDeuda(d.id)" class="text-xs font-medium text-crimson-500 hover:underline">Eliminar</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="py-8 text-center text-ink-500">Sin deudas registradas.</td></tr>
               }
             </tbody>
           </table>
@@ -194,8 +262,8 @@ import { Rol } from '../../core/models/models';
     }
   `
 })
-export class AdministracionComponent {
-  tab = signal<'usuarios' | 'auditoria' | 'sistema'>('usuarios');
+export class AdministracionComponent implements OnInit {
+  tab = signal<'usuarios' | 'deudas' | 'auditoria' | 'sistema'>('usuarios');
   roles: Rol[] = ['recepcion', 'mecanico', 'almacen', 'administracion'];
   nuevo: { nombre: string; usuario: string; rol: Rol | ''; email: string } = { nombre: '', usuario: '', rol: '', email: '' };
 
@@ -210,7 +278,47 @@ export class AdministracionComponent {
   guardandoEmail = signal(false);
   emailHecho = signal(false);
 
+  // ---------- Deudas ----------
+  tabDeuda = signal<TipoDeuda>('POR_COBRAR');
+  nuevaDeuda: { nombre: string; descripcion: string; montoOriginal: number | null; fechaVencimiento: string } = {
+    nombre: '', descripcion: '', montoOriginal: null, fechaVencimiento: ''
+  };
+
   constructor(public store: StoreService) {}
+
+  ngOnInit(): void {
+    this.store.cargarDeudas();
+  }
+
+  deudasFiltradas = computed(() => this.store.deudas().filter((d) => d.tipo === this.tabDeuda()));
+
+  totalPendientePorCobrar = computed(() =>
+    this.store.deudas().filter((d) => d.tipo === 'POR_COBRAR' && d.estado === 'PENDIENTE').reduce((acc, d) => acc + d.montoPendiente, 0)
+  );
+
+  totalPendienteBanco = computed(() =>
+    this.store.deudas().filter((d) => d.tipo === 'BANCO' && d.estado === 'PENDIENTE').reduce((acc, d) => acc + d.montoPendiente, 0)
+  );
+
+  async crearDeuda(): Promise<void> {
+    if (!this.nuevaDeuda.nombre.trim() || !this.nuevaDeuda.montoOriginal || this.nuevaDeuda.montoOriginal <= 0) return;
+    await this.store.crearDeuda({
+      tipo: this.tabDeuda(),
+      nombre: this.nuevaDeuda.nombre.trim(),
+      descripcion: this.nuevaDeuda.descripcion.trim() || undefined,
+      montoOriginal: this.nuevaDeuda.montoOriginal,
+      fechaVencimiento: this.nuevaDeuda.fechaVencimiento || null
+    });
+    this.nuevaDeuda = { nombre: '', descripcion: '', montoOriginal: null, fechaVencimiento: '' };
+  }
+
+  async abonar(d: Deuda): Promise<void> {
+    const texto = prompt(`Abonar a "${d.nombre}" (pendiente: S/ ${d.montoPendiente.toFixed(2)}). ¿Cuánto?`);
+    if (!texto) return;
+    const monto = Number(texto);
+    if (!monto || monto <= 0) return;
+    await this.store.abonarDeuda(d.id, monto);
+  }
 
   nombreRol(rol: Rol): string {
     return NOMBRE_ROL[rol];

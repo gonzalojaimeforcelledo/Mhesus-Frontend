@@ -1,9 +1,9 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { ApiService } from './api.service';
 import {
-  Cliente, Cotizacion, Diagnostico, EstadoOT, ItemCotizacion, ItemVenta, Motocicleta,
+  Cliente, Cotizacion, Deuda, Diagnostico, EstadoOT, ItemCotizacion, ItemVenta, Motocicleta,
   MovimientoInventario, Notificacion, NivelCombustible, OrdenTrabajo, PedidoAlmacen, PedidoDetalle, Producto,
-  RegistroAuditoria, ResumenDia, Rol, Tarea, TipoTarea, TipoVenta, Usuario, Venta
+  RegistroAuditoria, ResumenDia, Rol, Tarea, TipoDeuda, TipoTarea, TipoVenta, Usuario, Venta
 } from '../models/models';
 
 /**
@@ -409,6 +409,32 @@ export class StoreService {
 
   async reporteMensualVentas(anio?: number): Promise<Record<string, number>> {
     return this.api.get<Record<string, number>>('/ventas/reporte-mensual', anio ? { anio: String(anio) } : undefined);
+  }
+
+  // ---------- Deudas (Administración) ----------
+  deudas = signal<Deuda[]>([]);
+
+  async cargarDeudas(): Promise<void> {
+    this.deudas.set(await this.api.get<Deuda[]>('/deudas'));
+  }
+
+  async crearDeuda(datos: {
+    tipo: TipoDeuda; nombre: string; descripcion?: string; clienteId?: string | null;
+    montoOriginal: number; fechaVencimiento?: string | null;
+  }): Promise<Deuda> {
+    const nueva = await this.api.post<Deuda>('/deudas', datos);
+    await this.cargarDeudas();
+    return nueva;
+  }
+
+  async abonarDeuda(id: string, monto: number): Promise<void> {
+    await this.api.patch(`/deudas/${id}/abonar`, { monto });
+    await this.cargarDeudas();
+  }
+
+  async eliminarDeuda(id: string): Promise<void> {
+    await this.api.delete(`/deudas/${id}`);
+    await this.cargarDeudas();
   }
 
   // ---------- Helpers de lectura cruzada ----------

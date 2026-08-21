@@ -6,7 +6,7 @@ import { StoreService } from '../../core/services/store.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NivelProducto, nivelVistaProducto, permisoDe } from '../../core/services/permissions';
 import { exportarProductosExcel, leerProductosDesdeArchivo } from './excel.util';
-import { Producto } from '../../core/models/models';
+import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MODELO } from '../../core/models/models';
 
 @Component({
   selector: 'app-almacen',
@@ -56,9 +56,17 @@ import { Producto } from '../../core/models/models';
 
       <!-- Buscador (todos los niveles con catálogo) -->
       @if (nivel() !== 'solo_nombre' || true) {
-        <div class="panel flex items-center gap-3 px-4 py-3">
+        <div class="panel flex items-center gap-3 px-4 py-3 flex-wrap">
           <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar por código o nombre..." class="w-full text-sm outline-none" />
+          <input [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar por código o nombre..." class="flex-1 min-w-[160px] text-sm outline-none" />
+          <select [ngModel]="filtroMarca()" (ngModelChange)="filtroMarca.set($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
+            <option [ngValue]="null">Todas las marcas</option>
+            @for (m of marcas; track m) { <option [value]="m">{{ m }}</option> }
+          </select>
+          <select [ngModel]="filtroAnio()" (ngModelChange)="filtroAnio.set($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
+            <option [ngValue]="null">Todos los años</option>
+            @for (a of aniosDisponibles; track a) { <option [value]="a">{{ a }}</option> }
+          </select>
         </div>
       }
 
@@ -112,6 +120,12 @@ import { Producto } from '../../core/models/models';
                     <span class="flex items-center gap-1">
                       <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-11.5a7 7 0 1 0-14 0C5 14.5 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
                       Ubicación: {{ p.lugar }}
+                    </span>
+                  }
+                  @if (p.marcaMoto) {
+                    <span class="flex items-center gap-1 text-navy-700 font-medium">
+                      <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 1 1-1h2M12 17.5H9m0 0 3-8h4l2 5"/></svg>
+                      {{ p.marcaMoto }} {{ p.modeloMoto }} {{ p.submodeloMoto }}{{ p.anioDesde ? ' (' + p.anioDesde + (p.anioHasta && p.anioHasta !== p.anioDesde ? '–' + p.anioHasta : '') + ')' : '' }}
                     </span>
                   }
                 </div>
@@ -249,6 +263,40 @@ import { Producto } from '../../core/models/models';
                   <label class="text-xs font-medium text-ink-500">Stock mínimo</label>
                   <input [(ngModel)]="edicion.stockMinimo" type="number" name="eStockMinimo" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
                 </div>
+                <div class="sm:col-span-2 pt-2 border-t border-ink-100">
+                  <p class="text-xs font-medium text-ink-500">Compatibilidad con moto (opcional)</p>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-ink-500">Marca</label>
+                  <select [(ngModel)]="edicion.marcaMoto" name="eMarca" (ngModelChange)="onMarcaEdicionChange()" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500">
+                    <option [ngValue]="null">— Cualquiera —</option>
+                    @for (m of marcas; track m) { <option [value]="m">{{ m }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-ink-500">Modelo</label>
+                  <select [(ngModel)]="edicion.modeloMoto" name="eModelo" (ngModelChange)="onModeloEdicionChange()" [disabled]="!edicion.marcaMoto" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500 disabled:opacity-50 disabled:bg-ink-50">
+                    <option [ngValue]="null">—</option>
+                    @for (m of modelosEdicionDisponibles(); track m) { <option [value]="m">{{ m }}</option> }
+                  </select>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-ink-500">Submodelo</label>
+                  <select [(ngModel)]="edicion.submodeloMoto" name="eSubmodelo" [disabled]="!edicion.modeloMoto" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500 disabled:opacity-50 disabled:bg-ink-50">
+                    <option [ngValue]="null">—</option>
+                    @for (s of submodelosEdicionDisponibles(); track s) { <option [value]="s">{{ s }}</option> }
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs font-medium text-ink-500">Año desde</label>
+                    <input [(ngModel)]="edicion.anioDesde" type="number" name="eAnioDesde" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium text-ink-500">Año hasta</label>
+                    <input [(ngModel)]="edicion.anioHasta" type="number" name="eAnioHasta" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
+                  </div>
+                </div>
               </div>
               <div class="flex justify-end gap-3 pt-2 border-t border-ink-100">
                 <button type="button" (click)="cerrarEdicion()" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500">Cancelar</button>
@@ -270,8 +318,13 @@ export class AlmacenComponent {
   errorImportacion = signal(false);
 
   productoEditando = signal<Producto | null>(null);
-  edicion: { nombre: string; codigo: string; codigoBarras: string; categoria: string; lugar: string; precio: number; descuentoMaximo: number | null; stockActual: number; stockMinimo: number } = {
-    nombre: '', codigo: '', codigoBarras: '', categoria: '', lugar: '', precio: 0, descuentoMaximo: null, stockActual: 0, stockMinimo: 0
+  edicion: {
+    nombre: string; codigo: string; codigoBarras: string; categoria: string; lugar: string; precio: number; descuentoMaximo: number | null;
+    stockActual: number; stockMinimo: number; marcaMoto: string | null; modeloMoto: string | null; submodeloMoto: string | null;
+    anioDesde: number | null; anioHasta: number | null;
+  } = {
+    nombre: '', codigo: '', codigoBarras: '', categoria: '', lugar: '', precio: 0, descuentoMaximo: null,
+    stockActual: 0, stockMinimo: 0, marcaMoto: null, modeloMoto: null, submodeloMoto: null, anioDesde: null, anioHasta: null
   };
 
   constructor(public store: StoreService, private auth: AuthService) {}
@@ -279,11 +332,20 @@ export class AlmacenComponent {
   /** mecánico: solo nombre · Recepción: código+precio, sin stock · Almacén/Admin: catálogo completo. */
   nivel = computed<NivelProducto>(() => nivelVistaProducto(this.auth.rol()!));
 
+  filtroMarca = signal<string | null>(null);
+  filtroAnio = signal<number | null>(null);
+  marcas = MARCAS_MOTO;
+  aniosDisponibles = Array.from({ length: new Date().getFullYear() - 2005 + 2 }, (_, i) => new Date().getFullYear() + 1 - i);
+
   productosFiltrados = computed(() => {
     const q = this.filtro().trim().toLowerCase();
-    const lista = this.store.productos();
-    if (!q) return lista;
-    return lista.filter((p) => p.codigo.toLowerCase().includes(q) || p.nombre.toLowerCase().includes(q));
+    const marca = this.filtroMarca();
+    const anio = this.filtroAnio();
+    let lista = this.store.productos();
+    if (q) lista = lista.filter((p) => p.codigo.toLowerCase().includes(q) || p.nombre.toLowerCase().includes(q));
+    if (marca) lista = lista.filter((p) => p.marcaMoto === marca);
+    if (anio) lista = lista.filter((p) => (!p.anioDesde || p.anioDesde <= anio) && (!p.anioHasta || p.anioHasta >= anio));
+    return lista;
   });
 
   movimientosOrdenados = computed(() => [...this.store.movimientos()].reverse());
@@ -320,9 +382,32 @@ export class AlmacenComponent {
       precio: p.precio,
       descuentoMaximo: p.descuentoMaximo ?? null,
       stockActual: p.stockActual,
-      stockMinimo: p.stockMinimo
+      stockMinimo: p.stockMinimo,
+      marcaMoto: p.marcaMoto ?? null,
+      modeloMoto: p.modeloMoto ?? null,
+      submodeloMoto: p.submodeloMoto ?? null,
+      anioDesde: p.anioDesde ?? null,
+      anioHasta: p.anioHasta ?? null
     };
     this.productoEditando.set(p);
+  }
+
+  modelosEdicionDisponibles(): string[] {
+    return this.edicion.marcaMoto ? MODELOS_POR_MARCA[this.edicion.marcaMoto as MarcaMoto] ?? [] : [];
+  }
+
+  submodelosEdicionDisponibles(): string[] {
+    if (!this.edicion.marcaMoto || !this.edicion.modeloMoto) return [];
+    return SUBMODELOS_POR_MODELO[`${this.edicion.marcaMoto}-${this.edicion.modeloMoto}`] ?? [];
+  }
+
+  onMarcaEdicionChange(): void {
+    this.edicion.modeloMoto = null;
+    this.edicion.submodeloMoto = null;
+  }
+
+  onModeloEdicionChange(): void {
+    this.edicion.submodeloMoto = null;
   }
 
   cerrarEdicion(): void {

@@ -111,6 +111,13 @@ import { ThemeService } from '../../core/services/theme.service';
               comunícate con el área de Administración del taller.
             </p>
           </section>
+
+          <section>
+            <h2 class="font-display font-700 text-lg text-ink-900 mb-2">9. Desarrollo del sistema</h2>
+            <p>
+              Este sistema fue desarrollado por Gonzalo Jaime Forcelledo.
+            </p>
+          </section>
         </div>
       </main>
     </div>

@@ -95,12 +95,16 @@ body { -webkit-font-smoothing: antialiased; }
 
 h1, h2, h3, h4, .font-display { font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.005em; }
 
-/* Botones: Rajdhani 700, como los títulos — mismo look llamativo para las acciones */
+/* Botones: Rajdhani 700, como los títulos — mismo look llamativo para las acciones.
+   Sombra suave añadida para el look "elevado" tipo tarjeta — mismo tono navy que
+   ya usa .panel, no es un color nuevo. */
 button, .btn, input[type="submit"], input[type="button"] {
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
   letter-spacing: 0.01em;
+  box-shadow: 0 2px 6px -2px rgba(11,11,107,0.18);
 }
+button:disabled, .btn:disabled { box-shadow: none; }
 
 /* Los campos de formulario no heredan el fondo/color del tema por defecto del navegador
    (siempre aparecen blancos con texto negro): forzamos que usen las variables del tema
@@ -122,12 +126,12 @@ select option {
 .panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px rgba(11,11,107,0.06), 0 8px 24px -14px rgba(11,11,107,0.22);
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 4px rgba(11,11,107,0.04), 0 12px 32px -16px rgba(11,11,107,0.16);
 }
 
 .dark .panel {
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px -14px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15), 0 12px 32px -16px rgba(0,0,0,0.45);
 }
 
 .ot-badge {

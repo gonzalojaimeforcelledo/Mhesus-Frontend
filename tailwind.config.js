@@ -48,6 +48,14 @@ module.exports = {
         body: ["\"Roboto Condensed\"", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"]
       },
+      // Escala de bordes redondeados más generosa (estilo tarjetas/botones suaves)
+      // — solo forma, no toca ningún color ni tipografía definidos arriba.
+      borderRadius: {
+        lg: "0.875rem",
+        xl: "1.25rem",
+        "2xl": "1.5rem",
+        full: "9999px"
+      },
       boxShadow: {
         panel: "0 1px 2px rgba(11,11,107,0.06), 0 8px 24px -12px rgba(11,11,107,0.18)"
       }

@@ -1,9 +1,9 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { ApiService } from './api.service';
 import {
-  Cliente, Cotizacion, Diagnostico, EstadoOT, ItemCotizacion, Motocicleta,
+  Cliente, Cotizacion, Diagnostico, EstadoOT, ItemCotizacion, ItemVenta, Motocicleta,
   MovimientoInventario, Notificacion, NivelCombustible, OrdenTrabajo, PedidoAlmacen, PedidoDetalle, Producto,
-  RegistroAuditoria, Rol, Tarea, TipoTarea, Usuario
+  RegistroAuditoria, ResumenDia, Rol, Tarea, TipoTarea, TipoVenta, Usuario, Venta
 } from '../models/models';
 
 /**
@@ -356,6 +356,43 @@ export class StoreService {
 
   async eliminarTarea(tareaId: string): Promise<void> {
     await this.api.delete(`/tareas/${tareaId}`);
+  }
+
+  // ---------- Facturación (Ventas) ----------
+  ventas = signal<Venta[]>([]);
+
+  async cargarVentas(): Promise<void> {
+    this.ventas.set(await this.api.get<Venta[]>('/ventas'));
+  }
+
+  async crearVenta(datos: {
+    tipo: TipoVenta; serie?: string; otId?: string | null; clienteId?: string | null;
+    clienteNombre?: string | null; clienteDocumento?: string | null; items: ItemVenta[];
+  }): Promise<Venta> {
+    const nueva = await this.api.post<Venta>('/ventas', datos);
+    await this.cargarVentas();
+    return nueva;
+  }
+
+  async anularVenta(id: string): Promise<void> {
+    await this.api.patch(`/ventas/${id}/anular`);
+    await this.cargarVentas();
+  }
+
+  async ventaDeOT(otId: string): Promise<Venta | undefined> {
+    try {
+      return await this.api.get<Venta>(`/ventas/por-ot/${otId}`);
+    } catch {
+      return undefined;
+    }
+  }
+
+  async resumenDelDiaVentas(): Promise<ResumenDia> {
+    return this.api.get<ResumenDia>('/ventas/resumen-dia');
+  }
+
+  async reporteMensualVentas(anio?: number): Promise<Record<string, number>> {
+    return this.api.get<Record<string, number>>('/ventas/reporte-mensual', anio ? { anio: String(anio) } : undefined);
   }
 
   // ---------- Helpers de lectura cruzada ----------

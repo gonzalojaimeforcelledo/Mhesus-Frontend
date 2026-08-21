@@ -76,6 +76,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/calendario/calendario.component').then((m) => m.CalendarioComponent)
       },
       {
+        path: 'ventas',
+        canActivate: [moduloGuard('ventas')],
+        loadComponent: () => import('./features/ventas/ventas-list.component').then((m) => m.VentasListComponent)
+      },
+      {
+        path: 'ventas/nueva',
+        canActivate: [moduloGuard('ventas')],
+        loadComponent: () => import('./features/ventas/venta-nueva.component').then((m) => m.VentaNuevaComponent)
+      },
+      {
         path: 'administracion',
         canActivate: [moduloGuard('usuarios')],
         loadComponent: () => import('./features/administracion/administracion.component').then((m) => m.AdministracionComponent)

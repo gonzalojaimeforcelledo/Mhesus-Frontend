@@ -288,7 +288,12 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
               <div class="flex items-center justify-between">
                 <p class="font-display font-700 text-lg text-ink-900">Total: S/ {{ cot.montoTotal }}</p>
                 @if (cot.autorizado) {
-                  <span class="text-xs font-medium text-emerald-600 bg-emerald-500/10 px-3 py-1.5 rounded-full">Autorizado por el cliente</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-emerald-600 bg-emerald-500/10 px-3 py-1.5 rounded-full">Autorizado por el cliente</span>
+                    @if (esRecepcion() || esAdministracion()) {
+                      <a [routerLink]="['/ventas/nueva']" [queryParams]="{ otId: otId() }" class="px-4 py-2 rounded-lg bg-navy-700 hover:bg-navy-900 text-white text-sm font-medium">Generar venta →</a>
+                    }
+                  </div>
                 } @else if (esRecepcion()) {
                   <button (click)="autorizar(cot.id)" class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600">Registrar autorización del cliente</button>
                 }
@@ -376,7 +381,7 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
   private _pedidoItems = signal<ItemPedidoForm[]>([{ productoId: '', nombreBusqueda: '', cantidad: 1, abierto: false }]);
   private _cotizacionItems = signal<ItemCotizacion[]>([{ descripcion: '', cantidad: 1, precioUnitario: 0 }]);
 
-  private otId = signal<string>('');
+  otId = signal<string>('');
   private ahora = signal(Date.now());
   private intervalId?: ReturnType<typeof setInterval>;
 

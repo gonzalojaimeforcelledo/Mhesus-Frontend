@@ -184,3 +184,47 @@ export interface Tarea {
   completada: boolean;
   creadoEn: string;
 }
+
+// ---------- Facturación ----------
+export type TipoVenta = 'FACTURA' | 'BOLETA' | 'NOTA_CREDITO' | 'NOTA_DEBITO' | 'PROFORMA' | 'GUIA_REMISION';
+export const NOMBRE_TIPO_VENTA: Record<TipoVenta, string> = {
+  FACTURA: 'Factura',
+  BOLETA: 'Boleta de venta',
+  NOTA_CREDITO: 'Nota de crédito',
+  NOTA_DEBITO: 'Nota de débito',
+  PROFORMA: 'Proforma',
+  GUIA_REMISION: 'Guía de remisión'
+};
+
+export interface ItemVenta {
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
+}
+
+export interface Venta {
+  id: string;
+  tipo: TipoVenta;
+  serie: string;
+  numero: number;
+  otId: string | null;
+  clienteId: string | null;
+  clienteNombre: string | null;
+  clienteDocumento: string | null;
+  items: ItemVenta[];
+  subtotal: number;
+  igv: number;
+  total: number;
+  estado: 'EMITIDA' | 'ANULADA';
+  creadoPor: string;
+  creadoEn: string;
+}
+
+export interface ResumenDia {
+  total: number;
+  emisiones: number;
+  promedio: number;
+  igv: number;
+  porTipo: Record<string, { monto: number; cantidad: number }>;
+  ultimaEmision: string | null;
+}

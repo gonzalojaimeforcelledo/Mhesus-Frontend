@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { modulo: 'clientes', ruta: '/clientes', etiqueta: 'Clientes', icono: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0' },
   { modulo: 'ot', ruta: '/ot', etiqueta: 'Órdenes de Trabajo', icono: 'M4 5h16v14H4zM4 9h16M9 5v4' },
   { modulo: 'calendario', ruta: '/calendario', etiqueta: 'Calendario', icono: 'M7 3v4M17 3v4M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z' },
+  { modulo: 'ventas', ruta: '/ventas', etiqueta: 'Facturación', icono: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 14h6M9 18h4' },
   { modulo: 'almacen', ruta: '/despacho', etiqueta: 'Despacho', icono: 'M20 12H4m16 0-5-5m5 5-5 5M4 12l5-5m-5 5 5 5' },
   { modulo: 'almacen', ruta: '/almacen', etiqueta: 'Almacén', icono: 'M3 7l9-4 9 4-9 4-9-4Zm0 0v10l9 4 9-4V7M12 11v10' },
   { modulo: 'cotizacion', ruta: '/cotizaciones', etiqueta: 'Cotizaciones', icono: 'M6 3h9l5 5v13H6zM14 3v5h5M9 13h6M9 17h6' },

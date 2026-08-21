@@ -1,6 +1,6 @@
 import { Rol } from '../models/models';
 
-export type Modulo = 'clientes' | 'ot' | 'almacen' | 'cotizacion' | 'reportes' | 'usuarios' | 'calendario';
+export type Modulo = 'clientes' | 'ot' | 'almacen' | 'cotizacion' | 'reportes' | 'usuarios' | 'calendario' | 'ventas';
 export type Permiso = 'todo' | 'lectura' | 'su_ot' | 'genera_pedido' | 'solicita_repuestos' | 'ninguno';
 
 // Matriz de permisos — sección 8 "Seguridad y control de acceso (RBAC)" del Design Doc
@@ -25,6 +25,9 @@ const MATRIZ: Record<Modulo, Record<Rol, Permiso>> = {
   },
   calendario: {
     recepcion: 'todo', mecanico: 'ninguno', almacen: 'todo', administracion: 'todo'
+  },
+  ventas: {
+    recepcion: 'todo', mecanico: 'ninguno', almacen: 'ninguno', administracion: 'todo'
   }
 };
 

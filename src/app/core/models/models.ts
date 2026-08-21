@@ -281,3 +281,25 @@ export interface Deuda {
   creadoPor: string;
   creadoEn: string;
 }
+
+// ---------- Compras (para el cálculo de IGV) ----------
+export interface Compra {
+  id: string;
+  proveedor: string;
+  descripcion: string | null;
+  numeroComprobante: string | null;
+  montoTotal: number;
+  igv: number;
+  fecha: string; // YYYY-MM-DD
+  creadoPor: string;
+  creadoEn: string;
+}
+
+export interface ResumenIgv {
+  igvVentas: number;
+  igvCompras: number;
+  igvAPagar: number;
+  debePagar: boolean;
+  sinVentasEsteMes: boolean;
+  sinComprasEsteMes: boolean;
+}

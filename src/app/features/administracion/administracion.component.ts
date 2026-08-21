@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '../../core/services/store.service';
 import { NOMBRE_ROL } from '../../core/services/permissions';
-import { Deuda, Rol, TipoDeuda } from '../../core/models/models';
+import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
 
 @Component({
   selector: 'app-administracion',
@@ -19,6 +19,7 @@ import { Deuda, Rol, TipoDeuda } from '../../core/models/models';
       <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 w-fit">
         <button (click)="tab.set('usuarios')" [class.bg-surface]="tab() === 'usuarios'" [class.shadow]="tab() === 'usuarios'" class="px-4 py-1.5 rounded-md text-xs font-medium">Usuarios</button>
         <button (click)="tab.set('deudas')" [class.bg-surface]="tab() === 'deudas'" [class.shadow]="tab() === 'deudas'" class="px-4 py-1.5 rounded-md text-xs font-medium">Deudas</button>
+        <button (click)="tab.set('igv')" [class.bg-surface]="tab() === 'igv'" [class.shadow]="tab() === 'igv'" class="px-4 py-1.5 rounded-md text-xs font-medium">IGV</button>
         <button (click)="tab.set('auditoria')" [class.bg-surface]="tab() === 'auditoria'" [class.shadow]="tab() === 'auditoria'" class="px-4 py-1.5 rounded-md text-xs font-medium">Auditoría</button>
         <button (click)="tab.set('sistema')" [class.bg-surface]="tab() === 'sistema'" [class.shadow]="tab() === 'sistema'" class="px-4 py-1.5 rounded-md text-xs font-medium">Sistema</button>
       </div>
@@ -150,6 +151,86 @@ import { Deuda, Rol, TipoDeuda } from '../../core/models/models';
         </div>
       }
 
+      @if (tab() === 'igv') {
+        @if (resumenIgv(); as r) {
+          <div class="panel p-6 max-w-lg" [class]="r.debePagar ? 'border-2 border-crimson-500' : 'border-2 border-emerald-500'">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="w-3 h-3 rounded-full shrink-0" [class]="r.debePagar ? 'bg-crimson-500' : 'bg-emerald-500'"></span>
+              <h2 class="font-display font-700 text-lg" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">
+                {{ r.debePagar ? 'Hay IGV por pagar este mes' : 'No hay IGV por pagar este mes' }}
+              </h2>
+            </div>
+            <p class="text-sm text-ink-500 mb-4">{{ nombreMesActual() }}</p>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-lg border border-ink-100 p-3">
+                <p class="text-xs text-ink-500">IGV de ventas</p>
+                <p class="font-display font-700 text-xl text-ink-900 mt-1">S/ {{ r.igvVentas.toFixed(2) }}</p>
+              </div>
+              <div class="rounded-lg border border-ink-100 p-3">
+                <p class="text-xs text-ink-500">IGV de compras</p>
+                <p class="font-display font-700 text-xl text-ink-900 mt-1">S/ {{ r.igvCompras.toFixed(2) }}</p>
+              </div>
+            </div>
+            <div class="rounded-lg p-3 mt-3" [class]="r.debePagar ? 'bg-crimson-500/10' : 'bg-emerald-500/10'">
+              <p class="text-xs" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">IGV a pagar (ventas − compras)</p>
+              <p class="font-display font-700 text-2xl mt-1" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">S/ {{ r.igvAPagar.toFixed(2) }}</p>
+            </div>
+
+            @if (r.sinVentasEsteMes || r.sinComprasEsteMes) {
+              <div class="mt-4 rounded-lg border border-amber-400/40 bg-amber-400/5 p-3 flex items-start gap-2">
+                <svg viewBox="0 0 24 24" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                <p class="text-xs text-amber-700">
+                  @if (r.sinVentasEsteMes) { Todavía no hay ventas registradas este mes. }
+                  @if (r.sinVentasEsteMes && r.sinComprasEsteMes) { <br /> }
+                  @if (r.sinComprasEsteMes) { Todavía no hay compras registradas este mes. }
+                  Este cálculo puede estar incompleto.
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="panel p-5 mt-4 max-w-2xl">
+          <h2 class="font-display font-600 text-ink-900 mb-3">Registrar compra (crédito fiscal)</h2>
+          <form (ngSubmit)="crearCompra()" class="grid sm:grid-cols-2 gap-3">
+            <input [(ngModel)]="nuevaCompra.proveedor" name="cProveedor" placeholder="Proveedor" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevaCompra.numeroComprobante" name="cComprobante" placeholder="N° de comprobante (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevaCompra.descripcion" name="cDescripcion" placeholder="Descripción (opcional)" class="sm:col-span-2 rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevaCompra.montoTotal" type="number" min="0" step="0.01" name="cMonto" placeholder="Monto total (S/, con IGV)" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevaCompra.fecha" type="date" name="cFecha" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <button type="submit" class="sm:col-span-2 px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900 w-fit">Registrar compra</button>
+          </form>
+        </div>
+
+        <div class="panel overflow-x-auto mt-4 max-w-2xl">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-ink-500 border-b border-ink-100">
+                <th class="py-2.5 px-4 font-medium">Proveedor</th>
+                <th class="py-2.5 px-4 font-medium">Fecha</th>
+                <th class="py-2.5 px-4 font-medium">Monto</th>
+                <th class="py-2.5 px-4 font-medium">IGV</th>
+                <th class="py-2.5 px-4 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of store.compras(); track c.id) {
+                <tr class="border-b border-ink-50">
+                  <td class="py-3 px-4 text-ink-900">{{ c.proveedor }}</td>
+                  <td class="py-3 px-4 text-ink-500">{{ c.fecha }}</td>
+                  <td class="py-3 px-4 text-ink-500">S/ {{ c.montoTotal.toFixed(2) }}</td>
+                  <td class="py-3 px-4 text-ink-500">S/ {{ c.igv.toFixed(2) }}</td>
+                  <td class="py-3 px-4"><button (click)="eliminarCompra(c.id)" class="text-xs font-medium text-crimson-500 hover:underline">Eliminar</button></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="py-8 text-center text-ink-500">Sin compras registradas.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
       @if (tab() === 'auditoria') {
         <div class="panel overflow-x-auto">
           <table class="w-full text-sm">
@@ -263,7 +344,7 @@ import { Deuda, Rol, TipoDeuda } from '../../core/models/models';
   `
 })
 export class AdministracionComponent implements OnInit {
-  tab = signal<'usuarios' | 'deudas' | 'auditoria' | 'sistema'>('usuarios');
+  tab = signal<'usuarios' | 'deudas' | 'igv' | 'auditoria' | 'sistema'>('usuarios');
   roles: Rol[] = ['recepcion', 'mecanico', 'almacen', 'administracion'];
   nuevo: { nombre: string; usuario: string; rol: Rol | ''; email: string } = { nombre: '', usuario: '', rol: '', email: '' };
 
@@ -288,6 +369,42 @@ export class AdministracionComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.cargarDeudas();
+    this.store.cargarCompras();
+    this.cargarResumenIgv();
+  }
+
+  // ---------- IGV ----------
+  resumenIgv = signal<ResumenIgv | null>(null);
+  nuevaCompra: { proveedor: string; descripcion: string; numeroComprobante: string; montoTotal: number | null; fecha: string } = {
+    proveedor: '', descripcion: '', numeroComprobante: '', montoTotal: null, fecha: ''
+  };
+
+  private hoy = new Date();
+
+  nombreMesActual(): string {
+    return this.hoy.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' });
+  }
+
+  async cargarResumenIgv(): Promise<void> {
+    this.resumenIgv.set(await this.store.resumenIgvMensual(this.hoy.getFullYear(), this.hoy.getMonth() + 1));
+  }
+
+  async crearCompra(): Promise<void> {
+    if (!this.nuevaCompra.proveedor.trim() || !this.nuevaCompra.montoTotal || this.nuevaCompra.montoTotal <= 0 || !this.nuevaCompra.fecha) return;
+    await this.store.crearCompra({
+      proveedor: this.nuevaCompra.proveedor.trim(),
+      descripcion: this.nuevaCompra.descripcion.trim() || undefined,
+      numeroComprobante: this.nuevaCompra.numeroComprobante.trim() || undefined,
+      montoTotal: this.nuevaCompra.montoTotal,
+      fecha: this.nuevaCompra.fecha
+    });
+    this.nuevaCompra = { proveedor: '', descripcion: '', numeroComprobante: '', montoTotal: null, fecha: '' };
+    await this.cargarResumenIgv();
+  }
+
+  async eliminarCompra(id: string): Promise<void> {
+    await this.store.eliminarCompra(id);
+    await this.cargarResumenIgv();
   }
 
   deudasFiltradas = computed(() => this.store.deudas().filter((d) => d.tipo === this.tabDeuda()));

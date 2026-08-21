@@ -1,9 +1,9 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { ApiService } from './api.service';
 import {
-  Cliente, Cotizacion, Deuda, Diagnostico, EstadoOT, ItemCotizacion, ItemVenta, Motocicleta,
+  Cliente, Compra, Cotizacion, Deuda, Diagnostico, EstadoOT, ItemCotizacion, ItemVenta, Motocicleta,
   MovimientoInventario, Notificacion, NivelCombustible, OrdenTrabajo, PedidoAlmacen, PedidoDetalle, Producto,
-  RegistroAuditoria, ResumenDia, Rol, Tarea, TipoDeuda, TipoTarea, TipoVenta, Usuario, Venta
+  RegistroAuditoria, ResumenDia, ResumenIgv, Rol, Tarea, TipoDeuda, TipoTarea, TipoVenta, Usuario, Venta
 } from '../models/models';
 
 /**
@@ -435,6 +435,28 @@ export class StoreService {
   async eliminarDeuda(id: string): Promise<void> {
     await this.api.delete(`/deudas/${id}`);
     await this.cargarDeudas();
+  }
+
+  // ---------- Compras (para el cálculo de IGV) ----------
+  compras = signal<Compra[]>([]);
+
+  async cargarCompras(): Promise<void> {
+    this.compras.set(await this.api.get<Compra[]>('/compras'));
+  }
+
+  async crearCompra(datos: { proveedor: string; descripcion?: string; numeroComprobante?: string; montoTotal: number; fecha: string }): Promise<Compra> {
+    const nueva = await this.api.post<Compra>('/compras', datos);
+    await this.cargarCompras();
+    return nueva;
+  }
+
+  async eliminarCompra(id: string): Promise<void> {
+    await this.api.delete(`/compras/${id}`);
+    await this.cargarCompras();
+  }
+
+  async resumenIgvMensual(anio: number, mes: number): Promise<ResumenIgv> {
+    return this.api.get<ResumenIgv>('/ventas/igv-mensual', { anio: String(anio), mes: String(mes) });
   }
 
   // ---------- Helpers de lectura cruzada ----------

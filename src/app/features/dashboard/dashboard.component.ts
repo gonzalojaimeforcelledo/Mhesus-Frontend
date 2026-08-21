@@ -176,7 +176,7 @@ const ACCESOS: AccesoRapido[] = [
           <!-- Flujo de OT: para Recepción, tablero tipo Trello (solo ver, no se puede arrastrar para
                cambiar de estado a mano — el estado avanza solo según las acciones reales) -->
           @if (esRecepcion()) {
-            <div class="lg:col-span-3 panel p-5">
+            <div class="lg:col-span-3 panel p-5 min-w-0">
               <div class="flex items-center justify-between mb-4">
                 <div>
                   <h2 class="font-display font-600 text-ink-900">Órdenes de trabajo por estado</h2>

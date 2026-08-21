@@ -56,17 +56,35 @@ import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MOD
 
       <!-- Buscador (todos los niveles con catálogo) -->
       @if (nivel() !== 'solo_nombre' || true) {
-        <div class="panel flex items-center gap-3 px-4 py-3 flex-wrap">
-          <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar por código o nombre..." class="flex-1 min-w-[160px] text-sm outline-none" />
-          <select [ngModel]="filtroMarca()" (ngModelChange)="filtroMarca.set($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
-            <option [ngValue]="null">Todas las marcas</option>
-            @for (m of marcas; track m) { <option [value]="m">{{ m }}</option> }
-          </select>
-          <select [ngModel]="filtroAnio()" (ngModelChange)="filtroAnio.set($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
-            <option [ngValue]="null">Todos los años</option>
-            @for (a of aniosDisponibles; track a) { <option [value]="a">{{ a }}</option> }
-          </select>
+        <div class="panel p-3">
+          <div class="flex items-center gap-3 px-1 py-1 flex-wrap">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" placeholder="Buscar por código o nombre..." class="flex-1 min-w-[160px] text-sm outline-none" />
+            <select [ngModel]="filtroMarca()" (ngModelChange)="onFiltroMarcaChange($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
+              <option [ngValue]="null">Todas las marcas</option>
+              @for (m of marcas; track m) { <option [value]="m">{{ m }}</option> }
+            </select>
+            <select [ngModel]="filtroAnio()" (ngModelChange)="filtroAnio.set($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
+              <option [ngValue]="null">Todos los años</option>
+              @for (a of aniosDisponibles; track a) { <option [value]="a">{{ a }}</option> }
+            </select>
+          </div>
+
+          @if (filtroMarca()) {
+            <div class="flex items-center gap-3 px-1 pt-2 mt-2 border-t border-ink-50 flex-wrap">
+              <span class="text-xs text-ink-400 shrink-0">Filtrar más:</span>
+              <select [ngModel]="filtroModelo()" (ngModelChange)="onFiltroModeloChange($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
+                <option [ngValue]="null">Todos los modelos</option>
+                @for (m of modelosFiltroDisponibles(); track m) { <option [value]="m">{{ m }}</option> }
+              </select>
+              @if (filtroModelo()) {
+                <select [ngModel]="filtroSubmodelo()" (ngModelChange)="filtroSubmodelo.set($event)" class="text-sm rounded-lg border border-ink-100 px-2 py-1.5 shrink-0">
+                  <option [ngValue]="null">Todos los submodelos</option>
+                  @for (s of submodelosFiltroDisponibles(); track s) { <option [value]="s">{{ s }}</option> }
+                </select>
+              }
+            </div>
+          }
         </div>
       }
 
@@ -333,17 +351,46 @@ export class AlmacenComponent {
   nivel = computed<NivelProducto>(() => nivelVistaProducto(this.auth.rol()!));
 
   filtroMarca = signal<string | null>(null);
+  filtroModelo = signal<string | null>(null);
+  filtroSubmodelo = signal<string | null>(null);
   filtroAnio = signal<number | null>(null);
   marcas = MARCAS_MOTO;
   aniosDisponibles = Array.from({ length: new Date().getFullYear() - 2005 + 2 }, (_, i) => new Date().getFullYear() + 1 - i);
 
+  modelosFiltroDisponibles(): string[] {
+    const marca = this.filtroMarca();
+    return marca ? MODELOS_POR_MARCA[marca as MarcaMoto] ?? [] : [];
+  }
+
+  submodelosFiltroDisponibles(): string[] {
+    const marca = this.filtroMarca();
+    const modelo = this.filtroModelo();
+    if (!marca || !modelo) return [];
+    return SUBMODELOS_POR_MODELO[`${marca}-${modelo}`] ?? [];
+  }
+
+  onFiltroMarcaChange(valor: string | null): void {
+    this.filtroMarca.set(valor);
+    this.filtroModelo.set(null);
+    this.filtroSubmodelo.set(null);
+  }
+
+  onFiltroModeloChange(valor: string | null): void {
+    this.filtroModelo.set(valor);
+    this.filtroSubmodelo.set(null);
+  }
+
   productosFiltrados = computed(() => {
     const q = this.filtro().trim().toLowerCase();
     const marca = this.filtroMarca();
+    const modelo = this.filtroModelo();
+    const submodelo = this.filtroSubmodelo();
     const anio = this.filtroAnio();
     let lista = this.store.productos();
     if (q) lista = lista.filter((p) => p.codigo.toLowerCase().includes(q) || p.nombre.toLowerCase().includes(q));
     if (marca) lista = lista.filter((p) => p.marcaMoto === marca);
+    if (modelo) lista = lista.filter((p) => p.modeloMoto === modelo);
+    if (submodelo) lista = lista.filter((p) => p.submodeloMoto === submodelo);
     if (anio) lista = lista.filter((p) => (!p.anioDesde || p.anioDesde <= anio) && (!p.anioHasta || p.anioHasta >= anio));
     return lista;
   });

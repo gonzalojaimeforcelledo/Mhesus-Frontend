@@ -111,16 +111,22 @@ import { Producto } from '../../core/models/models';
                   @if (p.lugar) {
                     <span class="flex items-center gap-1">
                       <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-11.5a7 7 0 1 0-14 0C5 14.5 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
-                      {{ p.lugar }}
+                      Ubicación: {{ p.lugar }}
                     </span>
                   }
                 </div>
               </div>
 
               <div class="text-right shrink-0">
+                @if (p.precioAnterior && p.precioAnterior !== p.precio) {
+                  <p class="text-xs text-ink-400 line-through leading-none mb-0.5">S/ {{ p.precioAnterior.toFixed(2) }}</p>
+                }
                 <p class="font-display font-700 text-xl text-emerald-600 leading-none">
                   S/ {{ parteEntera(p.precio) }}<span class="text-sm align-top">.{{ parteDecimal(p.precio) }}</span>
                 </p>
+                @if (p.descuentoMaximo) {
+                  <p class="text-[11px] text-amber-600 mt-0.5">Hasta {{ p.descuentoMaximo }}% dscto.</p>
+                }
                 @if (nivel() === 'completo') {
                   <button (click)="toggleStock(p.id)" class="mt-2 px-3 py-1.5 rounded-lg bg-navy-700 text-white text-xs font-medium hover:bg-navy-900">
                     {{ stockAbierto() === p.id ? 'Ocultar stock' : 'Ver stock' }}
@@ -224,12 +230,16 @@ import { Producto } from '../../core/models/models';
                   <input [(ngModel)]="edicion.categoria" name="eCategoria" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
                 </div>
                 <div>
-                  <label class="text-xs font-medium text-ink-500">Lugar (ubicación en almacén)</label>
+                  <label class="text-xs font-medium text-ink-500">Ubicación</label>
                   <input [(ngModel)]="edicion.lugar" name="eLugar" placeholder="Ej. Estante A3" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
                 </div>
                 <div>
                   <label class="text-xs font-medium text-ink-500">Precio (S/)</label>
                   <input [(ngModel)]="edicion.precio" type="number" name="ePrecio" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-ink-500">Descuento máximo (%)</label>
+                  <input [(ngModel)]="edicion.descuentoMaximo" type="number" min="0" max="100" name="eDescuento" placeholder="Ej. 10" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
                 </div>
                 <div>
                   <label class="text-xs font-medium text-ink-500">Stock actual</label>
@@ -260,7 +270,9 @@ export class AlmacenComponent {
   errorImportacion = signal(false);
 
   productoEditando = signal<Producto | null>(null);
-  edicion = { nombre: '', codigo: '', codigoBarras: '', categoria: '', lugar: '', precio: 0, stockActual: 0, stockMinimo: 0 };
+  edicion: { nombre: string; codigo: string; codigoBarras: string; categoria: string; lugar: string; precio: number; descuentoMaximo: number | null; stockActual: number; stockMinimo: number } = {
+    nombre: '', codigo: '', codigoBarras: '', categoria: '', lugar: '', precio: 0, descuentoMaximo: null, stockActual: 0, stockMinimo: 0
+  };
 
   constructor(public store: StoreService, private auth: AuthService) {}
 
@@ -306,6 +318,7 @@ export class AlmacenComponent {
       categoria: p.categoria,
       lugar: p.lugar ?? '',
       precio: p.precio,
+      descuentoMaximo: p.descuentoMaximo ?? null,
       stockActual: p.stockActual,
       stockMinimo: p.stockMinimo
     };

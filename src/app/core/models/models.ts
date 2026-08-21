@@ -8,6 +8,7 @@ export interface Usuario {
   usuario: string;
   passwordHash?: string; // el backend nunca lo envía (@JsonIgnore); queda opcional en el frontend
   rol: Rol;
+  email?: string | null;
   activo: boolean;
 }
 
@@ -17,6 +18,7 @@ export interface Cliente {
   nombres: string;
   apellidos: string;
   celular: string;
+  email?: string | null;
   direccion: string;
   creadoEn: string;
 }
@@ -99,9 +101,11 @@ export interface Producto {
   nombre: string;
   categoria: string;
   precio: number;
+  precioAnterior?: number | null;
+  descuentoMaximo?: number | null;
   stockActual: number;
   stockMinimo: number;
-  lugar?: string;
+  lugar?: string; // "Ubicación" en la interfaz
 }
 
 export type EstadoPedido = 'Solicitado' | 'Aprobado' | 'Despachado parcial' | 'Despachado' | 'Cancelado';

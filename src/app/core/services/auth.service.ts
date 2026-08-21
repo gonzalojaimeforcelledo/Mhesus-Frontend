@@ -90,6 +90,22 @@ export class AuthService {
     await this.api.post('/auth/solicitar-restablecimiento', { usuario: usuario.trim() });
   }
 
+  /** Administrador: pide el código de 6 dígitos por correo. Siempre "funciona" del lado del usuario, exista o no la cuenta/correo (no se filtra esa info). */
+  async solicitarCodigoRecuperacion(usuario: string, email: string): Promise<void> {
+    await this.api.post('/auth/recuperar-admin/solicitar', { usuario: usuario.trim(), email: email.trim() });
+  }
+
+  /** Administrador: confirma el código y fija la nueva contraseña. */
+  async confirmarCodigoRecuperacion(usuario: string, codigo: string, nuevaPassword: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await this.api.post('/auth/recuperar-admin/confirmar', { usuario: usuario.trim(), codigo: codigo.trim(), nuevaPassword });
+      return { ok: true };
+    } catch (err) {
+      const anyErr = err as { error?: { mensaje?: string } };
+      return { ok: false, error: anyErr?.error?.mensaje ?? 'No se pudo confirmar el código.' };
+    }
+  }
+
   private cerrarSesionLocal(): void {
     this.usuarioActual.set(null);
     this.storage.set('sesion', null);

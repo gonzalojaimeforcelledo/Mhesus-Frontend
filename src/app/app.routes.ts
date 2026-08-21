@@ -11,6 +11,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/terminos/terminos.component').then((m) => m.TerminosComponent)
   },
   {
+    path: 'recuperar-admin',
+    loadComponent: () => import('./features/login/recuperar-admin.component').then((m) => m.RecuperarAdminComponent)
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./shared/components/shell.component').then((m) => m.ShellComponent),

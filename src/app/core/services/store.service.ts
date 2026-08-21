@@ -130,6 +130,12 @@ export class StoreService {
     return nuevo;
   }
 
+  /** Para cuando un cliente existente todavía no tenía correo registrado y se le pide al crear la OT. */
+  async actualizarEmailCliente(clienteId: string, email: string): Promise<void> {
+    await this.api.patch(`/clientes/${clienteId}/email`, { email });
+    await this.cargarClientes();
+  }
+
   async agregarMoto(datos: Omit<Motocicleta, 'id'>): Promise<Motocicleta> {
     const nueva = await this.api.post<Motocicleta>(`/clientes/${datos.clienteId}/motocicletas`, datos);
     await this.cargarMotos();
@@ -316,10 +322,16 @@ export class StoreService {
   }
 
   // ---------- Administración ----------
-  async crearUsuario(datos: { nombre: string; usuario: string; rol: Rol }): Promise<Usuario> {
+  async crearUsuario(datos: { nombre: string; usuario: string; rol: Rol; email?: string }): Promise<Usuario> {
     const nuevo = await this.api.post<Usuario>('/usuarios', datos);
     await this.cargarUsuarios();
     return nuevo;
+  }
+
+  /** Correo para "Recuperar acceso por correo" — solo relevante para cuentas de administración. */
+  async actualizarEmailUsuario(usuarioId: string, email: string): Promise<void> {
+    await this.api.patch(`/usuarios/${usuarioId}/email`, { email });
+    await this.cargarUsuarios();
   }
 
   async toggleUsuarioActivo(usuarioId: string): Promise<void> {

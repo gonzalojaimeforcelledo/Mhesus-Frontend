@@ -107,6 +107,12 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
                       <p class="text-sm font-medium text-ink-900">{{ c.nombres }} {{ c.apellidos }}</p>
                       <p class="text-xs text-ink-500 font-mono">DNI {{ c.dni }}</p>
                     </div>
+                    @if (!c.email) {
+                      <div class="mt-2">
+                        <label class="text-xs font-medium text-ink-500">Este cliente no tiene correo registrado — es obligatorio para la OT:</label>
+                        <input [(ngModel)]="emailClienteExistente" name="emailClienteExistente" type="email" required placeholder="correo@ejemplo.com" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
+                      </div>
+                    }
                   }
                 } @else {
                   <div class="grid sm:grid-cols-2 gap-3">
@@ -114,6 +120,7 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
                     <input [(ngModel)]="nuevoCliente.apellidos" name="ncApellidos" placeholder="Apellidos" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
                     <input [(ngModel)]="nuevoCliente.dni" name="ncDni" inputmode="numeric" maxlength="8" placeholder="DNI" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500 font-mono" />
                     <input [(ngModel)]="nuevoCliente.celular" name="ncCelular" placeholder="Celular" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
+                    <input [(ngModel)]="nuevoCliente.email" name="ncEmail" type="email" placeholder="Correo electrónico" required class="sm:col-span-2 rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
                   </div>
                 }
 
@@ -155,6 +162,17 @@ type ModoAltaMoto = 'dni' | 'nuevoCliente';
             {{ clienteSeleccionado()!.nombres }} {{ clienteSeleccionado()!.apellidos }} ·
             <span class="font-mono">{{ motoSeleccionada()!.placa }}</span> ({{ motoSeleccionada()!.marca }} {{ motoSeleccionada()!.modelo }})
           </p>
+
+          @if (!clienteSeleccionado()!.email) {
+            <div class="mb-4 rounded-lg border border-amber-400/40 bg-amber-400/5 p-3">
+              <label class="text-sm font-medium text-ink-700">Correo electrónico del cliente (obligatorio)</label>
+              <p class="text-xs text-ink-500 mt-0.5 mb-2">Este cliente no tiene correo registrado.</p>
+              <input [(ngModel)]="emailFaltante" name="emailFaltante" type="email" required placeholder="correo@ejemplo.com" class="w-full rounded-lg border border-ink-100 px-3 py-2 text-sm outline-none focus:border-navy-500" />
+              @if (intentoEnviar() && !emailFaltante.trim()) {
+                <p class="text-sm text-crimson-500 mt-2">El correo es obligatorio para crear la OT.</p>
+              }
+            </div>
+          }
 
           <form (ngSubmit)="crear()" class="space-y-5 max-w-2xl">
             <div>
@@ -299,7 +317,9 @@ export class OtNuevaComponent implements OnInit {
   mecanicoElegido: string | null = null;
   mensajeAsignacion = signal<string | null>(null);
 
-  nuevoCliente = { nombres: '', apellidos: '', dni: '', celular: '' };
+  nuevoCliente = { nombres: '', apellidos: '', dni: '', celular: '', email: '' };
+  emailClienteExistente = '';
+  emailFaltante = '';
   nuevaMoto = { marca: '', modelo: '', anio: new Date().getFullYear() };
   form: {
     observacionCliente: string; observacionAsesor: string; servicioARealizar: string; nivelCombustible: NivelCombustible; kmActual: number | null;
@@ -458,8 +478,12 @@ export class OtNuevaComponent implements OnInit {
 
   puedeRegistrarMotoNueva(): boolean {
     if (!this.nuevaMoto.marca || !this.nuevaMoto.modelo) return false;
-    if (this.modoAlta() === 'dni') return !!this.clienteParaMotoNueva();
-    return !!this.nuevoCliente.nombres && !!this.nuevoCliente.apellidos && !!this.nuevoCliente.dni && !!this.nuevoCliente.celular;
+    if (this.modoAlta() === 'dni') {
+      const c = this.clienteParaMotoNueva();
+      if (!c) return false;
+      return !!(c.email || this.emailClienteExistente.trim());
+    }
+    return !!this.nuevoCliente.nombres && !!this.nuevoCliente.apellidos && !!this.nuevoCliente.dni && !!this.nuevoCliente.celular && !!this.nuevoCliente.email;
   }
 
   async registrarMotoYDueno(): Promise<void> {
@@ -472,8 +496,13 @@ export class OtNuevaComponent implements OnInit {
         apellidos: this.nuevoCliente.apellidos,
         dni: this.nuevoCliente.dni,
         celular: this.nuevoCliente.celular,
+        email: this.nuevoCliente.email,
         direccion: ''
       });
+    } else if (cliente && !cliente.email && this.emailClienteExistente.trim()) {
+      // Cliente existente sin correo registrado: lo guardamos con el que acaba de escribir.
+      await this.store.actualizarEmailCliente(cliente.id, this.emailClienteExistente.trim());
+      cliente = { ...cliente, email: this.emailClienteExistente.trim() };
     }
     if (!cliente) return;
     try {
@@ -502,10 +531,15 @@ export class OtNuevaComponent implements OnInit {
   async crear(): Promise<void> {
     this.intentoEnviar.set(true);
     if (!this.fotosCompletas() || !this.fotoTableroValida()) return;
-    const cliente = this.clienteSeleccionado();
+    let cliente = this.clienteSeleccionado();
     const moto = this.motoSeleccionada();
     const asesorId = this.auth.usuario()?.id;
     if (!cliente || !moto || !asesorId) return;
+    if (!cliente.email) {
+      if (!this.emailFaltante.trim()) return; // correo obligatorio, no se puede crear la OT sin él
+      await this.store.actualizarEmailCliente(cliente.id, this.emailFaltante.trim());
+      cliente = { ...cliente, email: this.emailFaltante.trim() };
+    }
     const ot = await this.store.crearOT({
       clienteId: cliente.id,
       motoId: moto.id,

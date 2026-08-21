@@ -124,6 +124,9 @@ import { ThemeService } from '../../core/services/theme.service';
                       {{ enviandoOlvide() ? 'Enviando...' : 'Avisar' }}
                     </button>
                   </div>
+                  <p class="text-xs text-ink-400 pt-1">
+                    ¿Eres administrador? <a routerLink="/recuperar-admin" class="text-navy-700 hover:underline font-medium">Recupera tu acceso por correo →</a>
+                  </p>
                 }
               </div>
             }

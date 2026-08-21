@@ -27,15 +27,21 @@ import { Rol } from '../../core/models/models';
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-display font-600 text-ink-900">Crear usuario</h2>
           </div>
-          <form (ngSubmit)="crear()" class="grid sm:grid-cols-4 gap-3">
+          <form (ngSubmit)="crear()" class="grid sm:grid-cols-5 gap-3">
             <input [(ngModel)]="nuevo.nombre" name="nombre" placeholder="Nombre completo" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
             <input [(ngModel)]="nuevo.usuario" name="usuario" placeholder="Usuario de acceso" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="nuevo.email" name="email" type="email" placeholder="Correo (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
             <select [(ngModel)]="nuevo.rol" name="rol" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm">
               <option value="" disabled>Rol...</option>
               @for (r of roles; track r) { <option [value]="r">{{ nombreRol(r) }}</option> }
             </select>
             <button type="submit" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900">Crear</button>
           </form>
+          @if (rolQueRequiereEmail()) {
+            <p class="text-xs text-amber-600 mt-2">
+              El correo es obligatorio para cuentas de administración — sin él, esta cuenta no podrá usar "Recuperar acceso por correo" si olvida la contraseña.
+            </p>
+          }
         </div>
 
         <div class="panel overflow-x-auto">
@@ -45,6 +51,7 @@ import { Rol } from '../../core/models/models';
                 <th class="py-2.5 px-4 font-medium">Nombre</th>
                 <th class="py-2.5 px-4 font-medium">Usuario</th>
                 <th class="py-2.5 px-4 font-medium">Rol</th>
+                <th class="py-2.5 px-4 font-medium">Correo</th>
                 <th class="py-2.5 px-4 font-medium">Estado</th>
                 <th class="py-2.5 px-4 font-medium"></th>
               </tr>
@@ -55,12 +62,18 @@ import { Rol } from '../../core/models/models';
                   <td class="py-3 px-4 text-ink-900">{{ u.nombre }}</td>
                   <td class="py-3 px-4 font-mono text-xs text-ink-500">{{ u.usuario }}</td>
                   <td class="py-3 px-4 text-ink-700">{{ nombreRol(u.rol) }}</td>
+                  <td class="py-3 px-4 text-ink-500">
+                    @if (u.email) { {{ u.email }} } @else { <span class="text-ink-300 italic">sin correo</span> }
+                  </td>
                   <td class="py-3 px-4">
                     <span class="text-xs font-medium px-2.5 py-1 rounded-full" [class]="u.activo ? 'text-emerald-600 bg-emerald-500/10' : 'text-ink-400 bg-ink-100'">{{ u.activo ? 'Activo' : 'Inactivo' }}</span>
                   </td>
                   <td class="py-3 px-4 flex items-center gap-3">
                     <button (click)="store.toggleUsuarioActivo(u.id)" class="text-xs font-medium text-brand-700 hover:underline">{{ u.activo ? 'Desactivar' : 'Reactivar' }}</button>
                     <button (click)="abrirRestablecer(u)" class="text-xs font-medium text-navy-700 hover:underline">Restablecer contraseña</button>
+                    @if (u.rol === 'administracion') {
+                      <button (click)="abrirEmail(u)" class="text-xs font-medium text-navy-700 hover:underline">{{ u.email ? 'Cambiar correo' : 'Agregar correo' }}</button>
+                    }
                   </td>
                 </tr>
               }
@@ -146,12 +159,45 @@ import { Rol } from '../../core/models/models';
         </div>
       </div>
     }
+
+    <!-- Modal: correo (para poder usar "Recuperar acceso por correo") -->
+    @if (usuarioAEditarEmail(); as u) {
+      <div class="fixed inset-0 z-30 bg-ink-900/40 flex items-center justify-center p-4" (click)="cerrarEmail()">
+        <div class="bg-surface rounded-xl shadow-panel max-w-sm w-full p-5" (click)="$event.stopPropagation()">
+          <h3 class="font-display font-700 text-lg text-ink-900">Correo de la cuenta</h3>
+          <p class="text-sm text-ink-500 mt-1">
+            Para <span class="font-medium text-ink-900">{{ u.nombre }}</span> ({{ u.usuario }}). Se usa solo para
+            "Recuperar acceso por correo" si esta cuenta olvida su contraseña.
+          </p>
+
+          <div class="mt-4">
+            <label class="text-sm font-medium text-ink-700">Correo</label>
+            <input
+              type="email" [(ngModel)]="emailEditado" name="emailEditado"
+              class="mt-1 w-full rounded-lg border border-ink-100 bg-surface px-3 py-2.5 text-sm outline-none focus:border-navy-500"
+              placeholder="correo@gmail.com"
+            />
+          </div>
+
+          @if (emailHecho()) {
+            <p class="text-sm text-emerald-600 mt-2">Correo actualizado.</p>
+          }
+
+          <div class="flex justify-end gap-2 mt-5">
+            <button (click)="cerrarEmail()" class="px-4 py-2 rounded-lg text-sm font-medium text-ink-500 hover:bg-ink-50">Cerrar</button>
+            <button (click)="confirmarEmail()" [disabled]="guardandoEmail()" class="px-4 py-2 rounded-lg bg-navy-700 hover:bg-navy-900 disabled:opacity-50 text-white text-sm font-medium">
+              {{ guardandoEmail() ? 'Guardando...' : 'Guardar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `
 })
 export class AdministracionComponent {
   tab = signal<'usuarios' | 'auditoria' | 'sistema'>('usuarios');
   roles: Rol[] = ['recepcion', 'mecanico', 'almacen', 'administracion'];
-  nuevo: { nombre: string; usuario: string; rol: Rol | '' } = { nombre: '', usuario: '', rol: '' };
+  nuevo: { nombre: string; usuario: string; rol: Rol | ''; email: string } = { nombre: '', usuario: '', rol: '', email: '' };
 
   usuarioARestablecer = signal<{ id: string; nombre: string; usuario: string } | null>(null);
   nuevaPassword = '';
@@ -159,16 +205,28 @@ export class AdministracionComponent {
   restablecerHecho = signal(false);
   restablecerError = signal<string | null>(null);
 
+  usuarioAEditarEmail = signal<{ id: string; nombre: string; usuario: string; email?: string | null } | null>(null);
+  emailEditado = '';
+  guardandoEmail = signal(false);
+  emailHecho = signal(false);
+
   constructor(public store: StoreService) {}
 
   nombreRol(rol: Rol): string {
     return NOMBRE_ROL[rol];
   }
 
+  rolQueRequiereEmail(): boolean {
+    return this.nuevo.rol === 'administracion' && !this.nuevo.email.trim();
+  }
+
   async crear(): Promise<void> {
     if (!this.nuevo.nombre || !this.nuevo.usuario || !this.nuevo.rol) return;
-    await this.store.crearUsuario({ nombre: this.nuevo.nombre, usuario: this.nuevo.usuario, rol: this.nuevo.rol as Rol });
-    this.nuevo = { nombre: '', usuario: '', rol: '' };
+    await this.store.crearUsuario({
+      nombre: this.nuevo.nombre, usuario: this.nuevo.usuario, rol: this.nuevo.rol as Rol,
+      email: this.nuevo.email.trim() || undefined
+    });
+    this.nuevo = { nombre: '', usuario: '', rol: '', email: '' };
   }
 
   abrirRestablecer(u: { id: string; nombre: string; usuario: string }): void {
@@ -198,6 +256,28 @@ export class AdministracionComponent {
       this.restablecerError.set('No se pudo restablecer la contraseña. Intenta de nuevo.');
     } finally {
       this.restableciendo.set(false);
+    }
+  }
+
+  abrirEmail(u: { id: string; nombre: string; usuario: string; email?: string | null }): void {
+    this.usuarioAEditarEmail.set(u);
+    this.emailEditado = u.email ?? '';
+    this.emailHecho.set(false);
+  }
+
+  cerrarEmail(): void {
+    this.usuarioAEditarEmail.set(null);
+  }
+
+  async confirmarEmail(): Promise<void> {
+    const u = this.usuarioAEditarEmail();
+    if (!u) return;
+    this.guardandoEmail.set(true);
+    try {
+      await this.store.actualizarEmailUsuario(u.id, this.emailEditado.trim());
+      this.emailHecho.set(true);
+    } finally {
+      this.guardandoEmail.set(false);
     }
   }
 

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { StoreService } from '../../core/services/store.service';
 import { AuthService } from '../../core/services/auth.service';
-import { EstadoOT, SECUENCIA_ESTADOS_OT } from '../../core/models/models';
+import { EstadoOT, OrdenTrabajo, SECUENCIA_ESTADOS_OT } from '../../core/models/models';
 import { Modulo, puedeAcceder, permisoDe } from '../../core/services/permissions';
 
 interface AccesoRapido {
@@ -173,24 +173,58 @@ const ACCESOS: AccesoRapido[] = [
         </div>
 
         <div class="grid lg:grid-cols-3 gap-6">
-          <!-- Flujo de OT -->
-          <div class="lg:col-span-2 panel p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="font-display font-600 text-ink-900">Órdenes de trabajo por estado</h2>
-              <a routerLink="/ot" class="text-xs font-medium text-brand-700 hover:underline">Ver todas →</a>
-            </div>
-            <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
-              @for (estado of estados; track estado) {
-                <div class="rounded-lg border border-ink-100 p-3">
-                  <p class="text-2xl font-display font-700 text-ink-900">{{ conteoPorEstado()[estado] }}</p>
-                  <p class="text-[11px] text-ink-500 mt-1 leading-tight">{{ estado }}</p>
+          <!-- Flujo de OT: para Recepción, tablero tipo Trello (solo ver, no se puede arrastrar para
+               cambiar de estado a mano — el estado avanza solo según las acciones reales) -->
+          @if (esRecepcion()) {
+            <div class="lg:col-span-3 panel p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="font-display font-600 text-ink-900">Órdenes de trabajo por estado</h2>
+                  <p class="text-xs text-ink-400 mt-0.5">Solo consulta — el estado avanza solo según lo que realmente pasa con cada OT.</p>
                 </div>
-              }
+                <a routerLink="/ot" class="text-xs font-medium text-brand-700 hover:underline shrink-0">Ver todas →</a>
+              </div>
+              <div class="flex gap-3 overflow-x-auto pb-2">
+                @for (estado of estados; track estado) {
+                  <div class="shrink-0 w-64 bg-ink-50/60 rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                      <p class="text-xs font-medium text-ink-700">{{ estado }}</p>
+                      <span class="text-[11px] font-medium text-ink-500 bg-ink-100 rounded-full px-2 py-0.5">{{ otsDeEstado(estado).length }}</span>
+                    </div>
+                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                      @for (ot of otsDeEstado(estado); track ot.id) {
+                        <a [routerLink]="['/ot', ot.id]" class="block bg-surface rounded-lg border border-ink-100 p-3 hover:border-navy-500 transition-colors">
+                          <p class="text-xs font-mono font-semibold text-brand-700">{{ ot.numeroOT }}</p>
+                          <p class="text-sm font-medium text-ink-900 mt-0.5">{{ store.moto(ot.motoId)?.placa }}</p>
+                          <p class="text-xs text-ink-500 mt-0.5 truncate">{{ store.cliente(ot.clienteId)?.nombres }} {{ store.cliente(ot.clienteId)?.apellidos }}</p>
+                        </a>
+                      } @empty {
+                        <p class="text-xs text-ink-400 text-center py-4">Vacío</p>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
-          </div>
+          } @else {
+            <div class="lg:col-span-2 panel p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="font-display font-600 text-ink-900">Órdenes de trabajo por estado</h2>
+                <a routerLink="/ot" class="text-xs font-medium text-brand-700 hover:underline">Ver todas →</a>
+              </div>
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                @for (estado of estados; track estado) {
+                  <div class="rounded-lg border border-ink-100 p-3">
+                    <p class="text-2xl font-display font-700 text-ink-900">{{ conteoPorEstado()[estado] }}</p>
+                    <p class="text-[11px] text-ink-500 mt-1 leading-tight">{{ estado }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
 
           <!-- Actividad reciente -->
-          <div class="panel p-5">
+          <div class="panel p-5" [class.lg:col-span-3]="esRecepcion()">
             <h2 class="font-display font-600 text-ink-900 mb-4">Actividad reciente</h2>
             <ul class="space-y-3">
               @for (a of actividadReciente(); track a.id) {
@@ -241,6 +275,20 @@ export class DashboardComponent {
     for (const o of this.store.ots()) mapa[o.estado] = (mapa[o.estado] ?? 0) + 1;
     return mapa;
   });
+
+  /** Tablero tipo Trello (solo Recepción): OTs agrupadas por estado, más recientes primero. */
+  otsPorEstado = computed(() => {
+    const mapa: Record<string, OrdenTrabajo[]> = {};
+    for (const e of this.estados) mapa[e] = [];
+    for (const o of [...this.store.ots()].sort((a, b) => new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime())) {
+      (mapa[o.estado] ??= []).push(o);
+    }
+    return mapa;
+  });
+
+  otsDeEstado(estado: EstadoOT): OrdenTrabajo[] {
+    return this.otsPorEstado()[estado] ?? [];
+  }
 
   actividadReciente = computed(() => this.store.auditoria().slice(0, 6));
 

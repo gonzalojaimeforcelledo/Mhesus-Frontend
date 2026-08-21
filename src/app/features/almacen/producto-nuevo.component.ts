@@ -38,12 +38,17 @@ import { StoreService } from '../../core/services/store.service';
           <input [(ngModel)]="nuevo.categoria" name="categoria" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500" placeholder="Ej. Frenos" />
         </div>
         <div>
-          <label class="text-sm font-medium text-ink-700">Lugar</label>
+          <label class="text-sm font-medium text-ink-700">Ubicación</label>
           <input [(ngModel)]="nuevo.lugar" name="lugar" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500" placeholder="Ej. Estante A3" />
         </div>
         <div>
           <label class="text-sm font-medium text-ink-700">Precio (S/)</label>
           <input [(ngModel)]="nuevo.precio" type="number" min="0" step="0.01" name="precio" required class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500" />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-ink-700">Descuento máximo (%)</label>
+          <input [(ngModel)]="nuevo.descuentoMaximo" type="number" min="0" max="100" step="1" name="descuentoMaximo" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500" placeholder="Ej. 10" />
+          <p class="text-xs text-ink-400 mt-1">Hasta cuánto se le puede rebajar el precio a este producto.</p>
         </div>
         <div>
           <label class="text-sm font-medium text-ink-700">Stock inicial</label>
@@ -65,7 +70,9 @@ import { StoreService } from '../../core/services/store.service';
   `
 })
 export class ProductoNuevoComponent {
-  nuevo = { codigo: '', codigoBarras: '', nombre: '', categoria: '', lugar: '', precio: 0, stockActual: 0, stockMinimo: 0 };
+  nuevo: { codigo: string; codigoBarras: string; nombre: string; categoria: string; lugar: string; precio: number; descuentoMaximo: number | null; stockActual: number; stockMinimo: number } = {
+    codigo: '', codigoBarras: '', nombre: '', categoria: '', lugar: '', precio: 0, descuentoMaximo: null, stockActual: 0, stockMinimo: 0
+  };
   guardando = signal(false);
 
   constructor(private store: StoreService, private router: Router) {}

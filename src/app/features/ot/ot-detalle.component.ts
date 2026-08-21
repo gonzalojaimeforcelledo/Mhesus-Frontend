@@ -415,13 +415,13 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     if (!numero) return;
 
     const cot = this.store.cotizacionDeOT(otId);
-    const totalTexto = cot ? `\n💰 Total: S/ ${cot.montoTotal.toFixed(2)}` : '';
+    const totalTexto = cot ? `\n💵 Total: S/ ${cot.montoTotal.toFixed(2)}` : '';
     const mensaje =
       `👋 Hola ${cliente.nombres}, tu moto ${moto?.placa ?? ''} (${moto?.marca ?? ''} ${moto?.modelo ?? ''}) ` +
       `ya está lista ✅, el servicio se realizó con éxito.\n\n` +
-      `🧾 OT: ${o.numeroOT}\n🔧 Servicio: ${o.servicioARealizar}${totalTexto}\n\n` +
+      `📋 OT: ${o.numeroOT}\n🔧 Servicio: ${o.servicioARealizar}${totalTexto}\n\n` +
       `📎 Te comparto tu orden de trabajo en PDF con las sugerencias del técnico (adjunta abajo).\n\n` +
-      `🏍️ ¡Te esperamos!`;
+      `🏍 ¡Te esperamos!`;
 
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');

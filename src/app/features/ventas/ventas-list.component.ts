@@ -37,60 +37,68 @@ const NOMBRE_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep
       <!-- Resumen del día -->
       @if (tab() === 'resumen') {
         @if (resumen(); as r) {
-          <div class="panel p-6 max-w-lg">
-            <h2 class="font-display font-700 text-lg text-ink-900 mb-4">Resumen del día</h2>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <div class="flex items-center gap-2 text-emerald-600 text-xs font-medium mb-1">
-                  <span class="w-6 h-6 rounded-full bg-emerald-500/15 grid place-items-center">S/</span> Total
+          <div class="space-y-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="panel rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+                <div class="flex items-center gap-2 text-emerald-600 text-sm font-medium mb-2">
+                  <span class="w-7 h-7 rounded-full bg-emerald-500/15 grid place-items-center shrink-0">S/</span> Total
                 </div>
-                <p class="font-display font-700 text-xl text-ink-900">S/ {{ r.total.toFixed(2) }}</p>
+                <p class="font-display font-700 text-3xl text-ink-900">S/ {{ r.total.toFixed(2) }}</p>
               </div>
-              <div class="rounded-xl border border-navy-500/20 bg-navy-500/5 p-4">
-                <div class="flex items-center gap-2 text-navy-700 text-xs font-medium mb-1">
-                  <span class="w-6 h-6 rounded-full bg-navy-500/15 grid place-items-center">#</span> Emisiones
+              <div class="panel rounded-xl border border-navy-500/20 bg-navy-500/5 p-5">
+                <div class="flex items-center gap-2 text-navy-700 text-sm font-medium mb-2">
+                  <span class="w-7 h-7 rounded-full bg-navy-500/15 grid place-items-center shrink-0">#</span> Emisiones
                 </div>
-                <p class="font-display font-700 text-xl text-ink-900">{{ r.emisiones }}</p>
+                <p class="font-display font-700 text-3xl text-ink-900">{{ r.emisiones }}</p>
               </div>
-              <div class="rounded-xl border border-ink-100 bg-ink-50/60 p-4">
-                <div class="flex items-center gap-2 text-ink-500 text-xs font-medium mb-1">
-                  <span class="w-6 h-6 rounded-full bg-ink-100 grid place-items-center">~</span> Promedio
+              <div class="panel rounded-xl border border-ink-100 bg-ink-50/60 p-5">
+                <div class="flex items-center gap-2 text-ink-500 text-sm font-medium mb-2">
+                  <span class="w-7 h-7 rounded-full bg-ink-100 grid place-items-center shrink-0">~</span> Promedio
                 </div>
-                <p class="font-display font-700 text-xl text-ink-900">S/ {{ r.promedio.toFixed(2) }}</p>
+                <p class="font-display font-700 text-3xl text-ink-900">S/ {{ r.promedio.toFixed(2) }}</p>
               </div>
-              <div class="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
-                <div class="flex items-center gap-2 text-amber-600 text-xs font-medium mb-1">
-                  <span class="w-6 h-6 rounded-full bg-amber-400/15 grid place-items-center">%</span> IGV
+              <div class="panel rounded-xl border border-amber-400/20 bg-amber-400/5 p-5">
+                <div class="flex items-center gap-2 text-amber-600 text-sm font-medium mb-2">
+                  <span class="w-7 h-7 rounded-full bg-amber-400/15 grid place-items-center shrink-0">%</span> IGV
                 </div>
-                <p class="font-display font-700 text-xl text-ink-900">S/ {{ r.igv.toFixed(2) }}</p>
+                <p class="font-display font-700 text-3xl text-ink-900">S/ {{ r.igv.toFixed(2) }}</p>
               </div>
             </div>
 
-            <table class="w-full text-sm mt-5">
-              <thead>
-                <tr class="text-left text-ink-500 border-b border-ink-100">
-                  <th class="py-2 font-medium">Por tipo</th>
-                  <th class="py-2 font-medium text-right">Monto</th>
-                  <th class="py-2 font-medium text-right w-10">#</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (tipo of tiposResumen; track tipo) {
-                  <tr class="border-b border-ink-50">
-                    <td class="py-2 text-ink-700">{{ nombreTipo(tipo) }}</td>
-                    <td class="py-2 text-right text-ink-900">S/ {{ montoDeTipo(r, tipo).toFixed(2) }}</td>
-                    <td class="py-2 text-right text-ink-500">{{ cantidadDeTipo(r, tipo) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-
-            @if (r.ultimaEmision) {
-              <div class="flex items-center gap-2 text-sm text-ink-500 mt-4 pt-4 border-t border-ink-100">
-                <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                Última emisión <span class="font-medium text-ink-900 ml-1">{{ r.ultimaEmision | date:'shortTime' }}</span>
+            <div class="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+              <div class="panel p-6">
+                <h2 class="font-display font-700 text-lg text-ink-900 mb-4">Por tipo de comprobante</h2>
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-ink-500 border-b border-ink-100">
+                      <th class="py-2.5 font-medium">Tipo</th>
+                      <th class="py-2.5 font-medium text-right">Monto</th>
+                      <th class="py-2.5 font-medium text-right w-16">#</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (tipo of tiposResumen; track tipo) {
+                      <tr class="border-b border-ink-50">
+                        <td class="py-3 text-ink-700">{{ nombreTipo(tipo) }}</td>
+                        <td class="py-3 text-right text-ink-900 font-medium">S/ {{ montoDeTipo(r, tipo).toFixed(2) }}</td>
+                        <td class="py-3 text-right text-ink-500">{{ cantidadDeTipo(r, tipo) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
-            }
+
+              <div class="panel p-6">
+                <h2 class="font-display font-700 text-lg text-ink-900 mb-4">Detalle</h2>
+                @if (r.ultimaEmision) {
+                  <div class="flex items-center gap-2 text-sm text-ink-500 pb-4 mb-4 border-b border-ink-100">
+                    <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                    Última emisión <span class="font-medium text-ink-900 ml-1">{{ r.ultimaEmision | date:'shortTime' }}</span>
+                  </div>
+                }
+                <a routerLink="/ventas/nueva" class="block text-center px-4 py-2.5 rounded-lg bg-navy-700 hover:bg-navy-900 text-white text-sm font-medium">+ Nueva venta</a>
+              </div>
+            </div>
           </div>
         } @else {
           <p class="text-sm text-ink-500">Cargando resumen...</p>

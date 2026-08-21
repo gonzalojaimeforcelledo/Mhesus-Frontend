@@ -7,12 +7,10 @@ import { AuthService } from '../../core/services/auth.service';
 import { EstadoBadgeComponent } from '../../shared/components/estado-badge.component';
 import { FotoCapturaComponent } from '../../shared/components/foto-captura.component';
 import { PasoProceso, ProcesoStepperComponent } from '../../shared/components/proceso-stepper.component';
-import { EstadoOT, EstadoPedido, ItemCotizacion, OrdenTrabajo, Producto, SECUENCIA_ESTADOS_OT } from '../../core/models/models';
-import { NivelProducto, nivelVistaProducto } from '../../core/services/permissions';
+import { EstadoOT, OrdenTrabajo, SECUENCIA_ESTADOS_OT } from '../../core/models/models';
 import { descargarOtPdf } from './ot-pdf.util';
 
 type Seccion = 'diagnostico' | 'almacen' | 'cotizacion' | 'auditoria';
-interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad: number; abierto: boolean }
 
 @Component({
   selector: 'app-ot-detalle',
@@ -184,151 +182,39 @@ interface ItemPedidoForm { productoId: string; nombreBusqueda: string; cantidad:
           </div>
         }
 
-        <!-- Sección: Pedido de almacén -->
+        <!-- Sección: Pedido de almacén (resumen — el detalle está en su propia pantalla) -->
         @if (seccion() === 'almacen') {
           <div class="panel p-5">
-            <h2 class="font-display font-600 text-ink-900 mb-3">Pedidos de almacén</h2>
-            @for (p of pedidos(); track p.id) {
-              <div class="border border-ink-100 rounded-lg p-3 mb-2">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-medium text-ink-500">Pedido {{ p.creadoEn | date:'short' }}</span>
-                  <span class="text-xs font-medium" [class]="claseEstadoPedido(p.estado)">{{ p.estado }}</span>
-                </div>
-                <ul class="text-sm space-y-0.5">
-                  @for (d of store.detalleDePedido(p.id); track d.id) {
-                    <li class="flex justify-between text-ink-700">
-                      <span>{{ etiquetaPedidoItem(d.productoId) }} × {{ d.cantidadSolicitada }}</span>
-                      <span class="text-xs text-ink-400">{{ d.cantidadDespachada }}/{{ d.cantidadSolicitada }} desp.</span>
-                    </li>
-                  }
-                </ul>
-                @if (p.fotoDespacho) {
-                  <img [src]="p.fotoDespacho" alt="Foto del despacho" class="mt-2 h-20 rounded-lg border border-ink-100 object-cover" />
-                }
-
-                @if (p.estado === 'Solicitado' && esRecepcion()) {
-                  <button (click)="confirmarYEnviar(o.id, p.id)" class="mt-2 px-3 py-1.5 rounded-lg bg-navy-700 text-white text-xs font-medium hover:bg-navy-900">
-                    Cliente aceptó → Enviar a Almacén
-                  </button>
-                }
-                @if (p.estado === 'Solicitado' && puedeDespachar()) {
-                  <p class="mt-2 text-xs text-ink-400">Pendiente de que Recepción confirme el presupuesto con el cliente.</p>
-                }
-                @if (p.estado === 'Aprobado' && puedeDespachar()) {
-                  <div class="mt-2 pt-2 border-t border-ink-100">
-                    <app-foto-captura
-                      label="Foto de los productos entregados (opcional)" textoBoton="Tomar o subir foto del despacho"
-                      [valor]="fotosDespacho[p.id] ?? null" (valorChange)="fotosDespacho[p.id] = $event"
-                    />
-                    <button (click)="despachar(p.id)" class="mt-2 px-3 py-1.5 rounded-lg bg-navy-700 text-white text-xs font-medium hover:bg-navy-900">Confirmar despacho</button>
-                  </div>
-                }
+            <div class="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 class="font-display font-600 text-ink-900">Pedido de almacén</h2>
+                <p class="text-sm text-ink-500 mt-1">
+                  {{ pedidos().length ? pedidos().length + ' pedido(s) registrado(s)' : 'Sin pedidos registrados todavía.' }}
+                  @if (pedidosPendientesCount() > 0) { — <span class="text-amber-600 font-medium">{{ pedidosPendientesCount() }} pendiente(s)</span> }
+                </p>
               </div>
-            } @empty {
-              <p class="text-sm text-ink-500 mb-3">Sin pedidos registrados.</p>
-            }
-
-            @if (puedeGenerarPedido()) {
-              <div class="pt-4 border-t border-ink-100 mt-4">
-                <p class="text-sm font-medium text-ink-700 mb-3">Nuevo pedido</p>
-                @for (item of pedidoItems(); track $index; let i = $index) {
-                  <div class="flex items-center gap-3 mb-3">
-                    <div class="relative flex-1">
-                      <div class="flex items-center gap-2 rounded-xl border border-ink-100 focus-within:border-navy-500 px-3 py-2.5">
-                        <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                        <input
-                          [(ngModel)]="item.nombreBusqueda" [name]="'prodq'+i" placeholder="Buscar producto por nombre..."
-                          (focus)="item.abierto = true" (blur)="item.abierto = false"
-                          (ngModelChange)="item.productoId = ''"
-                          class="w-full text-sm outline-none"
-                        />
-                      </div>
-                      @if (item.abierto && productosFiltrados(item.nombreBusqueda).length) {
-                        <div class="absolute z-10 mt-1.5 w-full bg-surface border border-ink-100 rounded-xl shadow-panel max-h-64 overflow-y-auto py-1">
-                          @for (p of productosFiltrados(item.nombreBusqueda); track p.id) {
-                            <button type="button" (mousedown)="elegirProducto(item, p)" class="w-full flex items-center gap-3 text-left px-3 py-2.5 hover:bg-wing-100/40">
-                              <span class="w-9 h-9 rounded-full bg-wing-100 grid place-items-center shrink-0">
-                                <svg viewBox="0 0 24 24" class="w-4 h-4 text-brand-700" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.66 5.66L4 17v3h3l5.03-5.03a4 4 0 0 1 5.67-5.67L21 6l-3-3-3.3 3.3Z"/></svg>
-                              </span>
-                              <span class="text-sm font-medium text-ink-900">{{ etiquetaProducto(p) }}</span>
-                            </button>
-                          }
-                        </div>
-                      }
-                    </div>
-                    <input type="number" min="1" [(ngModel)]="item.cantidad" [name]="'cant'+i" class="w-20 rounded-xl border border-ink-100 px-3 py-2.5 text-sm text-center" />
-                    <button type="button" (click)="quitarItemPedido(i)" class="text-ink-300 hover:text-crimson-500 text-lg leading-none px-1">✕</button>
-                  </div>
-                }
-                <div class="flex items-center gap-3 mt-3">
-                  <button type="button" (click)="agregarItemPedido()" class="text-sm font-medium text-brand-700 hover:underline">+ Agregar producto</button>
-                  <button type="button" (click)="generarPedido(o.id)" [disabled]="!huboSeleccion()" class="ml-auto px-4 py-2.5 rounded-xl bg-navy-700 text-white text-sm font-medium hover:bg-navy-900 disabled:opacity-40">Generar pedido</button>
-                </div>
-              </div>
-            }
+              <a [routerLink]="['/ot', otId(), 'pedido']" class="px-5 py-2.5 rounded-lg bg-navy-700 hover:bg-navy-900 text-white text-sm font-medium">Ver pedido de almacén →</a>
+            </div>
           </div>
         }
 
-        <!-- Sección: Cotización -->
+        <!-- Sección: Cotización (resumen — el detalle está en su propia pantalla) -->
         @if (seccion() === 'cotizacion') {
           <div class="panel p-5">
-            <h2 class="font-display font-600 text-ink-900 mb-3">Cotización</h2>
-            @if (cotizacion(); as cot) {
-              <div class="overflow-x-auto mb-3">
-                <table class="w-full text-sm">
-                  <thead><tr class="text-left text-ink-500 border-b border-ink-100"><th class="py-1.5 font-medium">Descripción</th><th class="py-1.5 font-medium">Cant.</th><th class="py-1.5 font-medium">P. Unit.</th><th class="py-1.5 font-medium text-right">Subtotal</th></tr></thead>
-                  <tbody>
-                    @for (item of cot.detalle; track item.descripcion) {
-                      <tr class="border-b border-ink-50">
-                        <td class="py-1.5 text-ink-900">{{ item.descripcion }}</td>
-                        <td class="py-1.5 text-ink-500">{{ item.cantidad }}</td>
-                        <td class="py-1.5 text-ink-500">S/ {{ item.precioUnitario }}</td>
-                        <td class="py-1.5 text-right text-ink-900">S/ {{ item.cantidad * item.precioUnitario }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-              <div class="flex items-center justify-between">
-                <p class="font-display font-700 text-lg text-ink-900">Total: S/ {{ cot.montoTotal }}</p>
-                @if (cot.autorizado) {
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-medium text-emerald-600 bg-emerald-500/10 px-3 py-1.5 rounded-full">Autorizado por el cliente</span>
-                    @if (esRecepcion() || esAdministracion()) {
-                      <a [routerLink]="['/ventas/nueva']" [queryParams]="{ otId: otId() }" class="px-4 py-2 rounded-lg bg-navy-700 hover:bg-navy-900 text-white text-sm font-medium">Generar venta →</a>
-                    }
-                  </div>
-                } @else if (esRecepcion()) {
-                  <button (click)="autorizar(cot.id)" class="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600">Registrar autorización del cliente</button>
+            <div class="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 class="font-display font-600 text-ink-900">Cotización</h2>
+                @if (cotizacion(); as cot) {
+                  <p class="text-sm text-ink-500 mt-1">
+                    Total: S/ {{ cot.montoTotal }}
+                    @if (cot.autorizado) { — <span class="text-emerald-600 font-medium">Autorizado por el cliente</span> } @else { — <span class="text-amber-600 font-medium">Pendiente de autorización</span> }
+                  </p>
+                } @else {
+                  <p class="text-sm text-ink-500 mt-1">Aún no se ha generado una cotización.</p>
                 }
               </div>
-            } @else {
-              <p class="text-sm text-ink-500 mb-3">Aún no se ha generado una cotización.</p>
-            }
-
-            @if (esRecepcion() && (!cotizacion() || !cotizacion()!.autorizado)) {
-              <div class="pt-3 border-t border-ink-100 mt-3">
-                <div class="flex items-center justify-between mb-2">
-                  <p class="text-xs font-medium text-ink-500">{{ cotizacion() ? 'Editar cotización' : 'Nueva cotización' }}</p>
-                  @if (pedidos().length) {
-                    <button type="button" (click)="cargarProductosDelPedido()" class="text-xs font-medium text-brand-700 hover:underline">Cargar productos del pedido (con precio) →</button>
-                  }
-                </div>
-                @for (item of cotizacionItems(); track $index; let i = $index) {
-                  <div class="flex items-center gap-2 mb-2">
-                    <input placeholder="Descripción" [(ngModel)]="item.descripcion" [name]="'desc'+i" class="flex-1 rounded-lg border border-ink-100 px-2 py-1.5 text-xs" />
-                    <input type="number" min="1" placeholder="Cant." [(ngModel)]="item.cantidad" [name]="'cantc'+i" class="w-16 rounded-lg border border-ink-100 px-2 py-1.5 text-xs" />
-                    <input type="number" min="0" placeholder="P. Unit." [(ngModel)]="item.precioUnitario" [name]="'precio'+i" class="w-24 rounded-lg border border-ink-100 px-2 py-1.5 text-xs" />
-                    <button type="button" (click)="quitarItemCotizacion(i)" class="text-ink-300 hover:text-crimson-500 text-xs">✕</button>
-                  </div>
-                }
-                <div class="flex items-center gap-2 mt-2 flex-wrap">
-                  <button type="button" (click)="agregarItemCotizacion()" class="text-xs font-medium text-brand-700 hover:underline">+ Agregar ítem</button>
-                  <button type="button" (click)="agregarServicioMecanico()" class="text-xs font-medium text-brand-700 hover:underline">+ Agregar servicio del mecánico (mano de obra)</button>
-                  <button type="button" (click)="guardarCotizacion(o.id)" [disabled]="!cotizacionItems().length" class="ml-auto px-3 py-1.5 rounded-lg bg-navy-700 text-white text-xs font-medium hover:bg-navy-900 disabled:opacity-40">Guardar cotización</button>
-                </div>
-              </div>
-            }
+              <a [routerLink]="['/ot', otId(), 'cotizacion']" class="px-5 py-2.5 rounded-lg bg-navy-700 hover:bg-navy-900 text-white text-sm font-medium">Ver cotización →</a>
+            </div>
           </div>
         }
 
@@ -377,14 +263,11 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
   mecanicoElegido: string | null = null;
   estadoForzado: EstadoOT | null = null;
   mensaje = signal<string | null>(null);
-  fotosDespacho: Record<string, string | null> = {};
   mensajeExito = signal<string | null>(null);
   generandoPdf = signal(false);
 
   formDiag = { diagnostico: '', sugerencias: '', foto: null as string | null };
   intentoDiagnostico = signal(false);
-  private _pedidoItems = signal<ItemPedidoForm[]>([{ productoId: '', nombreBusqueda: '', cantidad: 1, abierto: false }]);
-  private _cotizacionItems = signal<ItemCotizacion[]>([{ descripcion: '', cantidad: 1, precioUnitario: 0 }]);
 
   otId = signal<string>('');
   private ahora = signal(Date.now());
@@ -450,50 +333,11 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     }))
   );
 
-  pedidoItems = this._pedidoItems.asReadonly();
-  cotizacionItems = this._cotizacionItems.asReadonly();
-
   esRecepcion(): boolean { return this.auth.rol() === 'recepcion'; }
   esAdministracion(): boolean { return this.auth.rol() === 'administracion'; }
   esMecanicoAsignado(): boolean {
     const o = this.ot();
     return this.auth.rol() === 'mecanico' && !!o && o.mecanicoId === this.auth.usuario()?.id;
-  }
-
-  /** Nivel de detalle de producto visible según el rol: mecánico solo nombre; Recepción código+precio (sin stock); Almacén/Admin todo. */
-  private nivelProducto(): NivelProducto { return nivelVistaProducto(this.auth.rol()!); }
-  nombreProducto(productoId: string): string { return this.store.producto(productoId)?.nombre ?? '—'; }
-  etiquetaProducto(p: Producto): string {
-    const nivel = this.nivelProducto();
-    if (nivel === 'solo_nombre') return p.nombre;
-    if (nivel === 'con_precio') return `${p.codigo} — ${p.nombre} (S/ ${p.precio})`;
-    return `${p.codigo} — ${p.nombre} (stock ${p.stockActual})`;
-  }
-  /** Cómo mostrar cada línea de un pedido ya generado: Almacén y Recepción identifican el producto por su código. */
-  etiquetaPedidoItem(productoId: string): string {
-    const p = this.store.producto(productoId);
-    if (!p) return '—';
-    return this.nivelProducto() === 'solo_nombre' ? p.nombre : `${p.codigo} — ${p.nombre}`;
-  }
-  productosFiltrados(query: string): Producto[] {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return this.store.productos().filter((p) => p.nombre.toLowerCase().includes(q)).slice(0, 6);
-  }
-  elegirProducto(item: ItemPedidoForm, p: Producto): void {
-    item.productoId = p.id;
-    item.nombreBusqueda = p.nombre;
-    item.abierto = false;
-  }
-  huboSeleccion(): boolean {
-    return this.pedidoItems().some((i) => i.productoId && i.cantidad > 0);
-  }
-
-  claseEstadoPedido(estado: EstadoPedido): string {
-    if (estado === 'Despachado') return 'text-emerald-600';
-    if (estado === 'Aprobado') return 'text-brand-700';
-    if (estado === 'Cancelado') return 'text-crimson-500';
-    return 'text-amber-500';
   }
 
   puedeAsignar(): boolean { return this.esRecepcion(); }
@@ -502,8 +346,6 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     return !!o && !!o.trabajoIniciadoEn && !o.trabajoFinalizadoEn;
   });
   puedeDiagnosticar(): boolean { return this.esMecanicoAsignado(); }
-  puedeGenerarPedido(): boolean { return this.esMecanicoAsignado(); }
-  puedeDespachar(): boolean { return this.auth.rol() === 'almacen'; }
 
   private uid(): string { return this.auth.usuario()?.id ?? ''; }
 
@@ -573,13 +415,13 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     if (!numero) return;
 
     const cot = this.store.cotizacionDeOT(otId);
-    const totalTexto = cot ? `\nTotal: S/ ${cot.montoTotal.toFixed(2)}` : '';
+    const totalTexto = cot ? `\n💰 Total: S/ ${cot.montoTotal.toFixed(2)}` : '';
     const mensaje =
-      `Hola ${cliente.nombres}, tu moto ${moto?.placa ?? ''} (${moto?.marca ?? ''} ${moto?.modelo ?? ''}) ` +
-      `ya está lista, el servicio se realizó con éxito.\n` +
-      `OT: ${o.numeroOT}\nServicio: ${o.servicioARealizar}${totalTexto}\n` +
-      `Te comparto tu orden de trabajo en PDF con las sugerencias del técnico (adjunta abajo).\n` +
-      `¡Te esperamos!`;
+      `👋 Hola ${cliente.nombres}, tu moto ${moto?.placa ?? ''} (${moto?.marca ?? ''} ${moto?.modelo ?? ''}) ` +
+      `ya está lista ✅, el servicio se realizó con éxito.\n\n` +
+      `🧾 OT: ${o.numeroOT}\n🔧 Servicio: ${o.servicioARealizar}${totalTexto}\n\n` +
+      `📎 Te comparto tu orden de trabajo en PDF con las sugerencias del técnico (adjunta abajo).\n\n` +
+      `🏍️ ¡Te esperamos!`;
 
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
@@ -606,62 +448,6 @@ export class OtDetalleComponent implements OnInit, OnDestroy {
     if (this.esMecanicoAsignado() && !yaExistia) {
       this.irASeccion('almacen');
     }
-  }
-
-  agregarItemPedido(): void { this._pedidoItems.update((arr) => [...arr, { productoId: '', nombreBusqueda: '', cantidad: 1, abierto: false }]); }
-  quitarItemPedido(i: number): void { this._pedidoItems.update((arr) => arr.filter((_, idx) => idx !== i)); }
-  async generarPedido(otId: string): Promise<void> {
-    const items = this._pedidoItems().filter((i) => i.productoId && i.cantidad > 0).map((i) => ({ productoId: i.productoId, cantidad: i.cantidad }));
-    if (!items.length) return;
-    await this.store.generarPedidoAlmacen(otId, items, this.uid());
-    this._pedidoItems.set([{ productoId: '', nombreBusqueda: '', cantidad: 1, abierto: false }]);
-  }
-
-  async confirmarYEnviar(otId: string, pedidoId: string): Promise<void> {
-    const res = await this.store.confirmarAceptacionYEnviarAAlmacen(otId, pedidoId, this.uid());
-    if (res.ok) {
-      this.mensajeExito.set('Confirmado: el cliente aceptó el presupuesto. Pedido enviado a Almacén.');
-      this.mensaje.set(null);
-    } else {
-      this.mensaje.set(res.error ?? null);
-    }
-  }
-
-  async despachar(pedidoId: string): Promise<void> {
-    const res = await this.store.despacharPedido(pedidoId, this.uid(), this.fotosDespacho[pedidoId] ?? null);
-    this.mensaje.set(res.ok ? null : res.error ?? null);
-  }
-
-  agregarItemCotizacion(): void { this._cotizacionItems.update((arr) => [...arr, { descripcion: '', cantidad: 1, precioUnitario: 0 }]); }
-  /** Atajo para sumar la mano de obra / servicio del mecánico a la cotización, con precio libre para que Recepción lo complete. */
-  agregarServicioMecanico(): void {
-    const sugerencia = this.diagnostico()?.diagnostico || this.ot()?.servicioARealizar || '';
-    const descripcion = sugerencia ? `Mano de obra — ${sugerencia}` : 'Mano de obra';
-    this._cotizacionItems.update((arr) => [...arr, { descripcion, cantidad: 1, precioUnitario: 0 }]);
-  }
-  quitarItemCotizacion(i: number): void { this._cotizacionItems.update((arr) => arr.filter((_, idx) => idx !== i)); }
-
-  /** Trae los productos solicitados por el mecánico con su precio de catálogo, listos para cotizar. */
-  cargarProductosDelPedido(): void {
-    const pedido = this.pedidos()[this.pedidos().length - 1];
-    if (!pedido) return;
-    const detalle = this.store.detalleDePedido(pedido.id);
-    if (!detalle.length) return;
-    const items: ItemCotizacion[] = detalle.map((d) => {
-      const p = this.store.producto(d.productoId);
-      return { descripcion: p?.nombre ?? 'Producto', cantidad: d.cantidadSolicitada, precioUnitario: p?.precio ?? 0 };
-    });
-    this._cotizacionItems.set(items);
-  }
-  async guardarCotizacion(otId: string): Promise<void> {
-    const items = this._cotizacionItems().filter((i) => i.descripcion && i.cantidad > 0);
-    if (!items.length) return;
-    await this.store.generarCotizacion(otId, items);
-    this._cotizacionItems.set([{ descripcion: '', cantidad: 1, precioUnitario: 0 }]);
-  }
-
-  async autorizar(cotizacionId: string): Promise<void> {
-    await this.store.autorizarCotizacion(cotizacionId, this.uid());
   }
 
   async descargarPdf(o: OrdenTrabajo): Promise<void> {

@@ -34,9 +34,9 @@ import { Producto } from '../../core/models/models';
               Importar desde Excel
             </button>
             <input #archivoImportar type="file" accept=".xlsx,.xls,.csv" class="hidden" (change)="importar($event)" />
-            <button (click)="mostrarForm.set(!mostrarForm())" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900">
-              {{ mostrarForm() ? 'Cancelar' : '+ Nuevo producto' }}
-            </button>
+            <a routerLink="/almacen/nuevo" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900">
+              + Nuevo producto
+            </a>
           </div>
         }
       </div>
@@ -51,28 +51,6 @@ import { Producto } from '../../core/models/models';
         <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 w-fit">
           <button (click)="tab.set('productos')" [class.bg-surface]="tab() === 'productos'" [class.shadow]="tab() === 'productos'" class="px-4 py-1.5 rounded-md text-xs font-medium">Catálogo</button>
           <button (click)="tab.set('movimientos')" [class.bg-surface]="tab() === 'movimientos'" [class.shadow]="tab() === 'movimientos'" class="px-4 py-1.5 rounded-md text-xs font-medium">Movimientos</button>
-        </div>
-      }
-
-      @if (mostrarForm()) {
-        <div class="panel p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="font-display font-600 text-ink-900">Registrar producto</h2>
-            <p class="text-xs text-ink-400">Excel esperado: Código, Código de barras, Nombre, Categoría, Precio (S/), Stock actual, Stock mínimo</p>
-          </div>
-          <form (ngSubmit)="crearProducto()" class="grid sm:grid-cols-3 gap-3">
-            <input [(ngModel)]="nuevo.codigo" name="codigo" placeholder="Código interno" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevo.codigoBarras" name="codigoBarras" placeholder="Código de barras (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevo.nombre" name="nombre" placeholder="Nombre" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevo.categoria" name="categoria" placeholder="Categoría" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevo.lugar" name="lugar" placeholder="Lugar (ej. Estante A3)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevo.precio" type="number" name="precio" placeholder="Precio (S/)" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevo.stockActual" type="number" name="stockActual" placeholder="Stock inicial" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevo.stockMinimo" type="number" name="stockMinimo" placeholder="Stock mínimo" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <div class="sm:col-span-3 flex justify-end">
-              <button type="submit" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900">Guardar</button>
-            </div>
-          </form>
         </div>
       }
 
@@ -276,13 +254,10 @@ import { Producto } from '../../core/models/models';
 export class AlmacenComponent {
   tab = signal<'productos' | 'movimientos'>('productos');
   filtro = signal('');
-  mostrarForm = signal(false);
   stockAbierto = signal<string | null>(null);
   menuAbierto = signal<string | null>(null);
   mensajeImportacion = signal<string | null>(null);
   errorImportacion = signal(false);
-
-  nuevo = { codigo: '', codigoBarras: '', nombre: '', categoria: '', lugar: '', precio: 0, stockActual: 0, stockMinimo: 0 };
 
   productoEditando = signal<Producto | null>(null);
   edicion = { nombre: '', codigo: '', codigoBarras: '', categoria: '', lugar: '', precio: 0, stockActual: 0, stockMinimo: 0 };
@@ -314,13 +289,6 @@ export class AlmacenComponent {
   }
 
   private uid(): string { return this.auth.usuario()?.id ?? ''; }
-
-  async crearProducto(): Promise<void> {
-    if (!this.nuevo.codigo || !this.nuevo.nombre) return;
-    await this.store.crearProducto({ ...this.nuevo });
-    this.nuevo = { codigo: '', codigoBarras: '', nombre: '', categoria: '', lugar: '', precio: 0, stockActual: 0, stockMinimo: 0 };
-    this.mostrarForm.set(false);
-  }
 
   async eliminar(productoId: string): Promise<void> {
     this.menuAbierto.set(null);

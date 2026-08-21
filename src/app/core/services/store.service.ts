@@ -368,10 +368,14 @@ export class StoreService {
   async crearVenta(datos: {
     tipo: TipoVenta; serie?: string; otId?: string | null; clienteId?: string | null;
     clienteNombre?: string | null; clienteDocumento?: string | null; items: ItemVenta[];
-  }): Promise<Venta> {
-    const nueva = await this.api.post<Venta>('/ventas', datos);
-    await this.cargarVentas();
-    return nueva;
+  }): Promise<{ ok: boolean; venta?: Venta; error?: string }> {
+    try {
+      const nueva = await this.api.post<Venta>('/ventas', datos);
+      await this.cargarVentas();
+      return { ok: true, venta: nueva };
+    } catch (err) {
+      return { ok: false, error: this.mensajeError(err) };
+    }
   }
 
   async anularVenta(id: string): Promise<void> {

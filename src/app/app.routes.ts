@@ -46,6 +46,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/ot/ot-detalle.component').then((m) => m.OtDetalleComponent)
       },
       {
+        path: 'ot/:id/pedido',
+        canActivate: [moduloGuard('ot')],
+        loadComponent: () => import('./features/ot/ot-pedido.component').then((m) => m.OtPedidoComponent)
+      },
+      {
+        path: 'ot/:id/cotizacion',
+        canActivate: [moduloGuard('ot')],
+        loadComponent: () => import('./features/ot/ot-cotizacion.component').then((m) => m.OtCotizacionComponent)
+      },
+      {
         path: 'motos/:id/historial',
         canActivate: [moduloGuard('ot')],
         loadComponent: () => import('./features/ot/moto-historial.component').then((m) => m.MotoHistorialComponent)
@@ -54,6 +64,11 @@ export const routes: Routes = [
         path: 'almacen',
         canActivate: [moduloGuard('almacen')],
         loadComponent: () => import('./features/almacen/almacen.component').then((m) => m.AlmacenComponent)
+      },
+      {
+        path: 'almacen/nuevo',
+        canActivate: [permisoGuard('almacen', 'todo')],
+        loadComponent: () => import('./features/almacen/producto-nuevo.component').then((m) => m.ProductoNuevoComponent)
       },
       {
         path: 'despacho',

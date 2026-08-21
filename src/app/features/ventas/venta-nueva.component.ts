@@ -215,7 +215,7 @@ export class VentaNuevaComponent implements OnInit {
   });
 
   agregarProducto(p: { id: string; nombre: string; precio: number }): void {
-    this.carrito.update((filas) => [...filas, { id: `f${this.contador++}`, descripcion: p.nombre, cantidad: 1, precioUnitario: p.precio }]);
+    this.carrito.update((filas) => [...filas, { id: `f${this.contador++}`, descripcion: p.nombre, cantidad: 1, precioUnitario: p.precio, productoId: p.id }]);
     this.buscarProducto.set('');
   }
 
@@ -237,15 +237,19 @@ export class VentaNuevaComponent implements OnInit {
     this.mensajeError.set(null);
     try {
       const c = this.clienteElegido();
-      const venta = await this.store.crearVenta({
+      const res = await this.store.crearVenta({
         tipo: this.esProforma ? 'PROFORMA' : this.tipo,
         otId: this.otId,
         clienteId: c?.id ?? null,
         clienteNombre: c ? `${c.nombres} ${c.apellidos}` : 'Cliente varios',
         clienteDocumento: c?.dni ?? null,
-        items: this.carrito().map(({ descripcion, cantidad, precioUnitario }) => ({ descripcion, cantidad, precioUnitario }))
+        items: this.carrito().map(({ descripcion, cantidad, precioUnitario, productoId }) => ({ descripcion, cantidad, precioUnitario, productoId }))
       });
-      await descargarVentaPdf(venta, c);
+      if (!res.ok || !res.venta) {
+        this.mensajeError.set(res.error ?? 'No se pudo procesar la venta.');
+        return;
+      }
+      await descargarVentaPdf(res.venta, c);
       this.router.navigateByUrl('/ventas');
     } catch {
       this.mensajeError.set('No se pudo procesar la venta. Intenta de nuevo.');

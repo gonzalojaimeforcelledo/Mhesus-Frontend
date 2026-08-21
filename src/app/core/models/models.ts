@@ -200,6 +200,7 @@ export interface ItemVenta {
   descripcion: string;
   cantidad: number;
   precioUnitario: number;
+  productoId?: string | null;
 }
 
 export interface Venta {

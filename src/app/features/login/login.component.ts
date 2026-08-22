@@ -56,7 +56,7 @@ import { ThemeService } from '../../core/services/theme.service';
           @if (cerradaPorInactividad()) {
             <p class="mt-4 text-sm text-amber-600 bg-amber-400/10 border border-amber-400/30 rounded-lg px-3 py-2.5 flex items-center gap-2">
               <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-              Tu sesión se cerró por 5 minutos de inactividad. Vuelve a iniciar sesión.
+              Tu sesión se cerró por 10 minutos de inactividad. Vuelve a iniciar sesión.
             </p>
           }
 

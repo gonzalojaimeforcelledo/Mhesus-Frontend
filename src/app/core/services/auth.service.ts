@@ -34,7 +34,7 @@ interface LoginErrorResponse {
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  static readonly SESION_INACTIVIDAD_MS = 5 * 60 * 1000;
+  static readonly SESION_INACTIVIDAD_MS = 10 * 60 * 1000;
 
   private usuarioActual = signal<Usuario | null>(null);
   readonly usuario = computed(() => this.usuarioActual());

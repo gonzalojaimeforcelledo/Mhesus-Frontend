@@ -57,6 +57,38 @@ import { ItemCotizacion } from '../../core/models/models';
             <p class="text-sm text-ink-500 mb-4">Aún no se ha generado una cotización.</p>
           }
 
+          @if (pedidos().length && productosPedido().length) {
+            <div class="rounded-lg border border-navy-500/20 bg-navy-500/5 p-4 mt-2 mb-2">
+              <p class="text-sm font-medium text-navy-700 mb-3">Productos que pidió el mecánico</p>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-ink-500 border-b border-navy-500/10">
+                      <th class="py-1.5 font-medium">Producto</th>
+                      <th class="py-1.5 font-medium">Cant.</th>
+                      <th class="py-1.5 font-medium">Precio catálogo</th>
+                      <th class="py-1.5 font-medium text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of productosPedido(); track item.productoId) {
+                      <tr class="border-b border-navy-500/10 last:border-0">
+                        <td class="py-2 text-ink-900">{{ item.nombre }}</td>
+                        <td class="py-2 text-ink-500">{{ item.cantidad }}</td>
+                        <td class="py-2 text-ink-500">S/ {{ item.precio.toFixed(2) }}</td>
+                        <td class="py-2 text-right text-ink-900">S/ {{ (item.cantidad * item.precio).toFixed(2) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex justify-end mt-2 pt-2 border-t border-navy-500/10">
+                <p class="text-sm font-display font-700 text-navy-700">Total: S/ {{ totalProductosPedido().toFixed(2) }}</p>
+              </div>
+              <p class="text-xs text-ink-500 mt-2">Úsalo de referencia para armar la cotización — puedes ajustar precios (ej. descuentos) al guardarla.</p>
+            </div>
+          }
+
           @if (esRecepcion() && (!cotizacion() || !cotizacion()!.autorizado)) {
             <div class="pt-5 border-t border-ink-100 mt-5">
               <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -106,6 +138,18 @@ export class OtCotizacionComponent implements OnInit {
   pedidos = computed(() => this.store.pedidosDeOT(this.otId()));
   cotizacion = computed(() => this.store.cotizacionDeOT(this.otId()));
 
+  /** Productos que el mecánico pidió a Almacén, con su precio de catálogo — referencia para que Recepción cotice con el cliente. */
+  productosPedido = computed(() => {
+    const pedido = this.pedidos()[this.pedidos().length - 1];
+    if (!pedido) return [];
+    return this.store.detalleDePedido(pedido.id).map((d) => {
+      const p = this.store.producto(d.productoId);
+      return { productoId: d.productoId, nombre: p?.nombre ?? 'Producto', cantidad: d.cantidadSolicitada, precio: p?.precio ?? 0 };
+    });
+  });
+
+  totalProductosPedido = computed(() => this.productosPedido().reduce((acc, i) => acc + i.cantidad * i.precio, 0));
+
   esRecepcion(): boolean { return this.auth.rol() === 'recepcion'; }
   esAdministracion(): boolean { return this.auth.rol() === 'administracion'; }
 
@@ -124,14 +168,8 @@ export class OtCotizacionComponent implements OnInit {
 
   /** Trae los productos solicitados por el mecánico con su precio de catálogo, listos para cotizar. */
   cargarProductosDelPedido(): void {
-    const pedido = this.pedidos()[this.pedidos().length - 1];
-    if (!pedido) return;
-    const detalle = this.store.detalleDePedido(pedido.id);
-    if (!detalle.length) return;
-    const items: ItemCotizacion[] = detalle.map((d) => {
-      const p = this.store.producto(d.productoId);
-      return { descripcion: p?.nombre ?? 'Producto', cantidad: d.cantidadSolicitada, precioUnitario: p?.precio ?? 0 };
-    });
+    const items: ItemCotizacion[] = this.productosPedido().map((i) => ({ descripcion: i.nombre, cantidad: i.cantidad, precioUnitario: i.precio }));
+    if (!items.length) return;
     this._cotizacionItems.set(items);
   }
 

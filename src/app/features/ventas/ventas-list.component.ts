@@ -216,7 +216,7 @@ export class VentasListComponent implements OnInit {
   ];
 
   tiposResumen: TipoVenta[] = ['FACTURA', 'BOLETA', 'NOTA_DEBITO', 'NOTA_CREDITO'];
-  tiposReporte: TipoVenta[] = ['FACTURA', 'BOLETA', 'NOTA_CREDITO', 'NOTA_DEBITO', 'PROFORMA', 'GUIA_REMISION'];
+  tiposReporte: TipoVenta[] = ['FACTURA', 'BOLETA', 'NOTA_VENTA', 'NOTA_CREDITO', 'NOTA_DEBITO', 'PROFORMA', 'GUIA_REMISION'];
 
   constructor(public store: StoreService) {}
 

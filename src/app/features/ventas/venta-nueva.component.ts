@@ -20,15 +20,29 @@ interface FilaCarrito extends ItemVenta {
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 class="font-display font-700 text-2xl text-ink-900">Nueva venta</h1>
-          <p class="text-sm text-ink-500">Genera una boleta, factura o proforma.</p>
+          <p class="text-sm text-ink-500">Genera una boleta, factura, nota de venta o proforma.</p>
         </div>
-        <label class="flex items-center gap-2 text-sm text-ink-500 cursor-pointer select-none">
-          <input type="checkbox" [(ngModel)]="esProforma" name="esProforma" class="rounded border-ink-100 accent-navy-700" />
-          Solo proforma (no genera comprobante oficial)
-        </label>
       </div>
 
       <div class="panel p-6 space-y-5">
+        <div>
+          <label class="text-sm font-medium text-ink-700 block mb-2">¿Qué vas a generar?</label>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <button type="button" (click)="modo.set('oficial')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'oficial' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
+              <p class="text-sm font-medium text-ink-900">Boleta / Factura</p>
+              <p class="text-xs text-ink-500 mt-0.5">Comprobante oficial. Descuenta stock.</p>
+            </button>
+            <button type="button" (click)="modo.set('nota_venta')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'nota_venta' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
+              <p class="text-sm font-medium text-ink-900">Nota de venta</p>
+              <p class="text-xs text-ink-500 mt-0.5">No es oficial ante SUNAT. Descuenta stock igual.</p>
+            </button>
+            <button type="button" (click)="modo.set('proforma')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'proforma' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
+              <p class="text-sm font-medium text-ink-900">Proforma</p>
+              <p class="text-xs text-ink-500 mt-0.5">Solo cotización. No descuenta stock.</p>
+            </button>
+          </div>
+        </div>
+
         <div class="grid sm:grid-cols-2 gap-4">
           <div class="relative">
             <label class="text-sm font-medium text-ink-700">Cliente</label>
@@ -51,7 +65,7 @@ interface FilaCarrito extends ItemVenta {
             }
           </div>
 
-          @if (!esProforma) {
+          @if (modo() === 'oficial') {
             <div>
               <label class="text-sm font-medium text-ink-700">Tipo de comprobante</label>
               <select [(ngModel)]="tipo" name="tipo" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500">
@@ -140,7 +154,7 @@ interface FilaCarrito extends ItemVenta {
   `
 })
 export class VentaNuevaComponent implements OnInit {
-  esProforma = false;
+  modo = signal<'oficial' | 'nota_venta' | 'proforma'>('oficial');
   tipo: TipoVenta = 'BOLETA';
   dniBusqueda = '';
   buscarProducto = signal('');
@@ -237,8 +251,9 @@ export class VentaNuevaComponent implements OnInit {
     this.mensajeError.set(null);
     try {
       const c = this.clienteElegido();
+      const tipoFinal: TipoVenta = this.modo() === 'proforma' ? 'PROFORMA' : this.modo() === 'nota_venta' ? 'NOTA_VENTA' : this.tipo;
       const res = await this.store.crearVenta({
-        tipo: this.esProforma ? 'PROFORMA' : this.tipo,
+        tipo: tipoFinal,
         otId: this.otId,
         clienteId: c?.id ?? null,
         clienteNombre: c ? `${c.nombres} ${c.apellidos}` : 'Cliente varios',

@@ -221,10 +221,11 @@ export interface Tarea {
 }
 
 // ---------- Facturación ----------
-export type TipoVenta = 'FACTURA' | 'BOLETA' | 'NOTA_CREDITO' | 'NOTA_DEBITO' | 'PROFORMA' | 'GUIA_REMISION';
+export type TipoVenta = 'FACTURA' | 'BOLETA' | 'NOTA_VENTA' | 'NOTA_CREDITO' | 'NOTA_DEBITO' | 'PROFORMA' | 'GUIA_REMISION';
 export const NOMBRE_TIPO_VENTA: Record<TipoVenta, string> = {
   FACTURA: 'Factura',
   BOLETA: 'Boleta de venta',
+  NOTA_VENTA: 'Nota de venta',
   NOTA_CREDITO: 'Nota de crédito',
   NOTA_DEBITO: 'Nota de débito',
   PROFORMA: 'Proforma',

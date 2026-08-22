@@ -61,15 +61,18 @@ import { MARCAS_MOTO, MODELOS_POR_MARCA, SUBMODELOS_POR_MODELO, MarcaMoto } from
         </div>
 
         <div class="sm:col-span-2 lg:col-span-3 pt-2 border-t border-ink-100">
-          <p class="text-sm font-medium text-ink-700 mb-1">Compatibilidad con moto (opcional)</p>
-          <p class="text-xs text-ink-400 mb-3">Para qué marca, modelo, submodelo y años sirve este repuesto — ayuda a filtrar el catálogo.</p>
+          <p class="text-sm font-medium text-ink-700 mb-1">Compatibilidad con moto</p>
+          <p class="text-xs text-ink-400 mb-3">La marca es obligatoria. Modelo, submodelo y años son opcionales — ponlos solo si el repuesto es específico de un modelo.</p>
         </div>
         <div>
-          <label class="text-sm font-medium text-ink-700">Marca</label>
-          <select [(ngModel)]="nuevo.marcaMoto" name="marcaMoto" (ngModelChange)="onMarcaChange()" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500">
-            <option [ngValue]="null">— Cualquiera / no aplica —</option>
+          <label class="text-sm font-medium text-ink-700">Marca (obligatoria)</label>
+          <select [(ngModel)]="nuevo.marcaMoto" name="marcaMoto" (ngModelChange)="onMarcaChange()" class="mt-1 w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-navy-500" [class]="intentoEnviar() && !nuevo.marcaMoto ? 'border-crimson-500' : 'border-ink-100'">
+            <option [ngValue]="null" disabled>Selecciona una marca...</option>
             @for (m of marcas; track m) { <option [value]="m">{{ m }}</option> }
           </select>
+          @if (intentoEnviar() && !nuevo.marcaMoto) {
+            <p class="text-xs text-crimson-500 mt-1">Elige una marca para poder guardar el producto.</p>
+          }
         </div>
         <div>
           <label class="text-sm font-medium text-ink-700">Modelo</label>
@@ -118,6 +121,7 @@ export class ProductoNuevoComponent {
     stockActual: 0, stockMinimo: 0, marcaMoto: null, modeloMoto: null, submodeloMoto: null, anioDesde: null, anioHasta: null
   };
   guardando = signal(false);
+  intentoEnviar = signal(false);
 
   constructor(private store: StoreService, private router: Router) {}
 
@@ -140,7 +144,8 @@ export class ProductoNuevoComponent {
   }
 
   async crear(): Promise<void> {
-    if (!this.nuevo.codigo || !this.nuevo.nombre) return;
+    this.intentoEnviar.set(true);
+    if (!this.nuevo.codigo || !this.nuevo.nombre || !this.nuevo.marcaMoto) return;
     this.guardando.set(true);
     try {
       await this.store.crearProducto({ ...this.nuevo });

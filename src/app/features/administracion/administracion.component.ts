@@ -324,6 +324,34 @@ import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
       }
     </div>
 
+    <!-- Modal: confirmar limpieza de registros antiguos -->
+    @if (confirmandoLimpieza(); as c) {
+      <div class="fixed inset-0 z-30 bg-ink-900/40 flex items-center justify-center p-4" (click)="cancelarLimpieza()">
+        <div class="bg-surface rounded-xl shadow-panel max-w-sm w-full p-5" (click)="$event.stopPropagation()">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-full bg-crimson-500/10 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" class="w-5 h-5 text-crimson-500" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-display font-700 text-lg text-ink-900">Borrar registros antiguos</h3>
+              <p class="text-sm text-ink-500 mt-1">
+                ¿Borrar asistencia, notificaciones y auditoría más antiguas que {{ c.meses === 12 ? '1 año' : '6 meses' }}?
+                Esta acción no se puede deshacer.
+              </p>
+              <p class="text-sm text-ink-700 mt-2">Clientes, OT, ventas y cotizaciones <span class="font-medium">no se ven afectados</span>.</p>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 mt-5">
+            <button (click)="cancelarLimpieza()" [disabled]="limpiando()" class="px-4 py-2 rounded-lg text-sm font-medium text-ink-500 hover:bg-ink-50">Cancelar</button>
+            <button (click)="confirmarLimpieza()" [disabled]="limpiando()" class="px-4 py-2 rounded-lg bg-crimson-500 hover:bg-crimson-600 disabled:opacity-50 text-white text-sm font-medium">
+              {{ limpiando() ? 'Borrando...' : 'Sí, borrar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Modal: restablecer contraseña -->
     @if (usuarioARestablecer(); as u) {
       <div class="fixed inset-0 z-30 bg-ink-900/40 flex items-center justify-center p-4" (click)="cerrarRestablecer()">
@@ -571,16 +599,26 @@ export class AdministracionComponent implements OnInit {
   // ---------- Sistema: limpieza de registros antiguos ----------
   limpiando = signal(false);
   resultadoLimpieza = signal<{ asistenciaBorrada: number; notificacionesBorradas: number; auditoriaBorrada: number } | null>(null);
+  confirmandoLimpieza = signal<{ meses: 6 | 12 } | null>(null);
 
-  async limpiarDatosAntiguos(meses: 6 | 12): Promise<void> {
-    const etiqueta = meses === 12 ? '1 año' : '6 meses';
-    const confirmado = confirm(`¿Borrar asistencia, notificaciones y auditoría más antiguas que ${etiqueta}? Esta acción no se puede deshacer. Clientes, OT, ventas y cotizaciones no se ven afectados.`);
-    if (!confirmado) return;
+  limpiarDatosAntiguos(meses: 6 | 12): void {
+    this.resultadoLimpieza.set(null);
+    this.confirmandoLimpieza.set({ meses });
+  }
+
+  cancelarLimpieza(): void {
+    if (this.limpiando()) return;
+    this.confirmandoLimpieza.set(null);
+  }
+
+  async confirmarLimpieza(): Promise<void> {
+    const c = this.confirmandoLimpieza();
+    if (!c) return;
 
     this.limpiando.set(true);
-    this.resultadoLimpieza.set(null);
     try {
-      this.resultadoLimpieza.set(await this.store.limpiarRegistrosAntiguos(meses));
+      this.resultadoLimpieza.set(await this.store.limpiarRegistrosAntiguos(c.meses));
+      this.confirmandoLimpieza.set(null);
     } finally {
       this.limpiando.set(false);
     }

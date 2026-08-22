@@ -280,6 +280,10 @@ export interface Deuda {
   montoOriginal: number;
   montoPendiente: number;
   fechaVencimiento: string | null;
+  celular: string | null;
+  direccion: string | null;
+  garantia: string | null;
+  fechaInicio: string | null;
   estado: 'PENDIENTE' | 'PAGADA';
   creadoPor: string;
   creadoEn: string;

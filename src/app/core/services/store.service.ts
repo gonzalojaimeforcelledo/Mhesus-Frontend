@@ -429,6 +429,7 @@ export class StoreService {
   async crearDeuda(datos: {
     tipo: TipoDeuda; nombre: string; descripcion?: string; clienteId?: string | null;
     montoOriginal: number; fechaVencimiento?: string | null;
+    celular?: string | null; direccion?: string | null; garantia?: string | null; fechaInicio?: string | null;
   }): Promise<Deuda> {
     const nueva = await this.api.post<Deuda>('/deudas', datos);
     await this.cargarDeudas();
@@ -515,6 +516,11 @@ export class StoreService {
   /** Listado de asistencia de todo el personal, para el panel de Administración. Sin fechas, trae el mes actual. */
   async listarAsistenciaAdmin(desde?: string, hasta?: string): Promise<RegistroAsistenciaAdmin[]> {
     return this.api.get<RegistroAsistenciaAdmin[]>('/asistencia/admin', { desde, hasta });
+  }
+
+  /** Borra asistencia, notificaciones y auditoría más antiguas que el corte (6 o 12 meses). No toca datos de negocio. */
+  async limpiarRegistrosAntiguos(meses: 6 | 12): Promise<{ asistenciaBorrada: number; notificacionesBorradas: number; auditoriaBorrada: number }> {
+    return this.api.delete(`/sistema/limpieza?meses=${meses}`);
   }
 
   // ---------- Ofertas (combos de productos) ----------

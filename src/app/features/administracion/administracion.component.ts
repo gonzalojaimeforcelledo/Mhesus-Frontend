@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '../../core/services/store.service';
 import { NOMBRE_ROL } from '../../core/services/permissions';
-import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
+import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
 
 @Component({
   selector: 'app-administracion',
@@ -20,7 +20,6 @@ import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../.
         <button (click)="tab.set('usuarios')" [class.bg-surface]="tab() === 'usuarios'" [class.shadow]="tab() === 'usuarios'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Usuarios</button>
         <button (click)="tab.set('deudas')" [class.bg-surface]="tab() === 'deudas'" [class.shadow]="tab() === 'deudas'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Deudas</button>
         <button (click)="tab.set('igv')" [class.bg-surface]="tab() === 'igv'" [class.shadow]="tab() === 'igv'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">IGV</button>
-        <button (click)="tab.set('asistencia')" [class.bg-surface]="tab() === 'asistencia'" [class.shadow]="tab() === 'asistencia'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Asistencia</button>
         <button (click)="tab.set('auditoria')" [class.bg-surface]="tab() === 'auditoria'" [class.shadow]="tab() === 'auditoria'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Auditoría</button>
         <button (click)="tab.set('sistema')" [class.bg-surface]="tab() === 'sistema'" [class.shadow]="tab() === 'sistema'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Sistema</button>
       </div>
@@ -108,7 +107,19 @@ import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../.
             <input [(ngModel)]="nuevaDeuda.nombre" name="dNombre" [placeholder]="tabDeuda() === 'POR_COBRAR' ? 'Nombre del cliente' : 'Nombre del banco/entidad'" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
             <input [(ngModel)]="nuevaDeuda.descripcion" name="dDescripcion" placeholder="Descripción (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
             <input [(ngModel)]="nuevaDeuda.montoOriginal" type="number" min="0" step="0.01" name="dMonto" placeholder="Monto (S/)" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevaDeuda.fechaVencimiento" type="date" name="dFecha" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <div>
+              <label class="text-[11px] text-ink-500">Fecha de vencimiento (opcional)</label>
+              <input [(ngModel)]="nuevaDeuda.fechaVencimiento" type="date" name="dFecha" class="mt-0.5 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            </div>
+            @if (tabDeuda() === 'POR_COBRAR') {
+              <input [(ngModel)]="nuevaDeuda.celular" name="dCelular" placeholder="Celular (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <input [(ngModel)]="nuevaDeuda.direccion" name="dDireccion" placeholder="Dirección (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <input [(ngModel)]="nuevaDeuda.garantia" name="dGarantia" placeholder="Garantía dejada (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <div>
+                <label class="text-[11px] text-ink-500">Fecha en que se otorgó (opcional, hoy por defecto)</label>
+                <input [(ngModel)]="nuevaDeuda.fechaInicio" type="date" name="dFechaInicio" class="mt-0.5 w-full rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              </div>
+            }
             <button type="submit" class="sm:col-span-4 px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900 w-fit">Registrar</button>
           </form>
         </div>
@@ -119,6 +130,11 @@ import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../.
               <tr class="text-left text-ink-500 border-b border-ink-100">
                 <th class="py-2.5 px-4 font-medium">{{ tabDeuda() === 'POR_COBRAR' ? 'Cliente' : 'Banco/Entidad' }}</th>
                 <th class="py-2.5 px-4 font-medium">Descripción</th>
+                @if (tabDeuda() === 'POR_COBRAR') {
+                  <th class="py-2.5 px-4 font-medium">Contacto</th>
+                  <th class="py-2.5 px-4 font-medium">Garantía</th>
+                  <th class="py-2.5 px-4 font-medium">Desde</th>
+                }
                 <th class="py-2.5 px-4 font-medium">Vencimiento</th>
                 <th class="py-2.5 px-4 font-medium">Original</th>
                 <th class="py-2.5 px-4 font-medium">Pendiente</th>
@@ -131,6 +147,15 @@ import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../.
                 <tr class="border-b border-ink-50" [class.opacity-50]="d.estado === 'PAGADA'">
                   <td class="py-3 px-4 text-ink-900">{{ d.nombre }}</td>
                   <td class="py-3 px-4 text-ink-500">{{ d.descripcion || '—' }}</td>
+                  @if (tabDeuda() === 'POR_COBRAR') {
+                    <td class="py-3 px-4 text-ink-500">
+                      @if (d.celular || d.direccion) {
+                        {{ d.celular || '—' }}<br /><span class="text-xs">{{ d.direccion || '' }}</span>
+                      } @else { — }
+                    </td>
+                    <td class="py-3 px-4 text-ink-500">{{ d.garantia || '—' }}</td>
+                    <td class="py-3 px-4 text-ink-500">{{ d.fechaInicio || '—' }}</td>
+                  }
                   <td class="py-3 px-4 text-ink-500">{{ d.fechaVencimiento || '—' }}</td>
                   <td class="py-3 px-4 text-ink-500">S/ {{ d.montoOriginal.toFixed(2) }}</td>
                   <td class="py-3 px-4 font-medium" [class]="d.estado === 'PAGADA' ? 'text-emerald-600' : 'text-amber-600'">S/ {{ d.montoPendiente.toFixed(2) }}</td>
@@ -234,55 +259,6 @@ import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../.
         </div>
       }
 
-      @if (tab() === 'asistencia') {
-        <div class="panel p-4 sm:p-5">
-          <div class="flex flex-wrap items-end gap-3">
-            <div>
-              <label class="text-xs font-medium text-ink-500">Desde</label>
-              <input type="date" [(ngModel)]="asistenciaDesde" name="asistenciaDesde" class="mt-1 block rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="text-xs font-medium text-ink-500">Hasta</label>
-              <input type="date" [(ngModel)]="asistenciaHasta" name="asistenciaHasta" class="mt-1 block rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            </div>
-            <button (click)="cargarAsistenciaAdmin()" [disabled]="cargandoAsistencia()" class="px-4 py-2 rounded-lg bg-navy-700 hover:bg-navy-900 disabled:opacity-50 text-white text-sm font-medium">
-              {{ cargandoAsistencia() ? 'Cargando...' : 'Filtrar' }}
-            </button>
-          </div>
-          <p class="text-xs text-ink-400 mt-2">Sin filtro, se muestra el mes calendario actual.</p>
-        </div>
-
-        <div class="panel overflow-x-auto mt-4">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-left text-ink-500 border-b border-ink-100">
-                <th class="py-2.5 px-4 font-medium">Fecha</th>
-                <th class="py-2.5 px-4 font-medium">Usuario</th>
-                <th class="py-2.5 px-4 font-medium">Rol</th>
-                <th class="py-2.5 px-4 font-medium">Llegada</th>
-                <th class="py-2.5 px-4 font-medium">Inicio almuerzo</th>
-                <th class="py-2.5 px-4 font-medium">Fin almuerzo</th>
-                <th class="py-2.5 px-4 font-medium">Salida</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of asistenciaAdmin(); track r.id) {
-                <tr class="border-b border-ink-50">
-                  <td class="py-3 px-4 text-ink-500">{{ r.fecha }}</td>
-                  <td class="py-3 px-4 text-ink-900">{{ r.nombreUsuario }}</td>
-                  <td class="py-3 px-4 text-ink-500">{{ nombreRol(r.rolUsuario) }}</td>
-                  <td class="py-3 px-4" [class]="r.horaLlegada ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaLlegada?.slice(0,5) ?? '—' }}</td>
-                  <td class="py-3 px-4" [class]="r.horaInicioAlmuerzo ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaInicioAlmuerzo?.slice(0,5) ?? '—' }}</td>
-                  <td class="py-3 px-4" [class]="r.horaFinAlmuerzo ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaFinAlmuerzo?.slice(0,5) ?? '—' }}</td>
-                  <td class="py-3 px-4" [class]="r.horaSalida ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaSalida?.slice(0,5) ?? '—' }}</td>
-                </tr>
-              } @empty {
-                <tr><td colspan="7" class="py-8 text-center text-ink-500">Sin registros de asistencia en el rango seleccionado.</td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
 
       @if (tab() === 'auditoria') {
         <div class="panel overflow-x-auto">
@@ -323,6 +299,27 @@ import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../.
           <button (click)="recargar()" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500">
             Recargar datos desde el servidor
           </button>
+        </div>
+
+        <div class="panel p-5 max-w-lg mt-4">
+          <h2 class="font-display font-600 text-ink-900 mb-2">Limpieza de registros antiguos</h2>
+          <p class="text-sm text-ink-500 mb-4">
+            Borra asistencia, notificaciones y auditoría más antiguas que el corte elegido, para liberar espacio.
+            <span class="font-medium text-ink-700">No borra clientes, OT, ventas ni cotizaciones</span> — esos datos de negocio se conservan siempre.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button (click)="limpiarDatosAntiguos(6)" [disabled]="limpiando()" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-crimson-500 disabled:opacity-50">
+              Borrar más antiguo de 6 meses
+            </button>
+            <button (click)="limpiarDatosAntiguos(12)" [disabled]="limpiando()" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-crimson-500 disabled:opacity-50">
+              Borrar más antiguo de 1 año
+            </button>
+          </div>
+          @if (resultadoLimpieza(); as r) {
+            <p class="text-sm text-emerald-600 mt-3">
+              Listo: {{ r.asistenciaBorrada }} registro(s) de asistencia, {{ r.notificacionesBorradas }} notificación(es) y {{ r.auditoriaBorrada }} registro(s) de auditoría eliminados.
+            </p>
+          }
         </div>
       }
     </div>
@@ -397,7 +394,7 @@ import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../.
   `
 })
 export class AdministracionComponent implements OnInit {
-  tab = signal<'usuarios' | 'deudas' | 'igv' | 'asistencia' | 'auditoria' | 'sistema'>('usuarios');
+  tab = signal<'usuarios' | 'deudas' | 'igv' | 'auditoria' | 'sistema'>('usuarios');
   roles: Rol[] = ['recepcion', 'mecanico', 'almacen', 'administracion'];
   nuevo: { nombre: string; usuario: string; rol: Rol | ''; email: string } = { nombre: '', usuario: '', rol: '', email: '' };
 
@@ -414,15 +411,13 @@ export class AdministracionComponent implements OnInit {
 
   // ---------- Deudas ----------
   tabDeuda = signal<TipoDeuda>('POR_COBRAR');
-  nuevaDeuda: { nombre: string; descripcion: string; montoOriginal: number | null; fechaVencimiento: string } = {
-    nombre: '', descripcion: '', montoOriginal: null, fechaVencimiento: ''
+  nuevaDeuda: {
+    nombre: string; descripcion: string; montoOriginal: number | null; fechaVencimiento: string;
+    celular: string; direccion: string; garantia: string; fechaInicio: string;
+  } = {
+    nombre: '', descripcion: '', montoOriginal: null, fechaVencimiento: '',
+    celular: '', direccion: '', garantia: '', fechaInicio: ''
   };
-
-  // ---------- Asistencia ----------
-  asistenciaAdmin = signal<RegistroAsistenciaAdmin[]>([]);
-  cargandoAsistencia = signal(false);
-  asistenciaDesde = '';
-  asistenciaHasta = '';
 
   constructor(public store: StoreService) {}
 
@@ -430,16 +425,6 @@ export class AdministracionComponent implements OnInit {
     this.store.cargarDeudas();
     this.store.cargarCompras();
     this.cargarResumenIgv();
-    this.cargarAsistenciaAdmin();
-  }
-
-  async cargarAsistenciaAdmin(): Promise<void> {
-    this.cargandoAsistencia.set(true);
-    try {
-      this.asistenciaAdmin.set(await this.store.listarAsistenciaAdmin(this.asistenciaDesde || undefined, this.asistenciaHasta || undefined));
-    } finally {
-      this.cargandoAsistencia.set(false);
-    }
   }
 
   // ---------- IGV ----------
@@ -493,9 +478,13 @@ export class AdministracionComponent implements OnInit {
       nombre: this.nuevaDeuda.nombre.trim(),
       descripcion: this.nuevaDeuda.descripcion.trim() || undefined,
       montoOriginal: this.nuevaDeuda.montoOriginal,
-      fechaVencimiento: this.nuevaDeuda.fechaVencimiento || null
+      fechaVencimiento: this.nuevaDeuda.fechaVencimiento || null,
+      celular: this.tabDeuda() === 'POR_COBRAR' ? (this.nuevaDeuda.celular.trim() || null) : null,
+      direccion: this.tabDeuda() === 'POR_COBRAR' ? (this.nuevaDeuda.direccion.trim() || null) : null,
+      garantia: this.tabDeuda() === 'POR_COBRAR' ? (this.nuevaDeuda.garantia.trim() || null) : null,
+      fechaInicio: this.tabDeuda() === 'POR_COBRAR' ? (this.nuevaDeuda.fechaInicio || null) : null
     });
-    this.nuevaDeuda = { nombre: '', descripcion: '', montoOriginal: null, fechaVencimiento: '' };
+    this.nuevaDeuda = { nombre: '', descripcion: '', montoOriginal: null, fechaVencimiento: '', celular: '', direccion: '', garantia: '', fechaInicio: '' };
   }
 
   async abonar(d: Deuda): Promise<void> {
@@ -577,5 +566,23 @@ export class AdministracionComponent implements OnInit {
 
   async recargar(): Promise<void> {
     await this.store.cargarTodo();
+  }
+
+  // ---------- Sistema: limpieza de registros antiguos ----------
+  limpiando = signal(false);
+  resultadoLimpieza = signal<{ asistenciaBorrada: number; notificacionesBorradas: number; auditoriaBorrada: number } | null>(null);
+
+  async limpiarDatosAntiguos(meses: 6 | 12): Promise<void> {
+    const etiqueta = meses === 12 ? '1 año' : '6 meses';
+    const confirmado = confirm(`¿Borrar asistencia, notificaciones y auditoría más antiguas que ${etiqueta}? Esta acción no se puede deshacer. Clientes, OT, ventas y cotizaciones no se ven afectados.`);
+    if (!confirmado) return;
+
+    this.limpiando.set(true);
+    this.resultadoLimpieza.set(null);
+    try {
+      this.resultadoLimpieza.set(await this.store.limpiarRegistrosAntiguos(meses));
+    } finally {
+      this.limpiando.set(false);
+    }
   }
 }

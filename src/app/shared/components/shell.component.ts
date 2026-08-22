@@ -24,6 +24,7 @@ const NAV: NavItem[] = [
   { modulo: 'almacen', ruta: '/almacen', etiqueta: 'Almacén', icono: 'M3 7l9-4 9 4-9 4-9-4Zm0 0v10l9 4 9-4V7M12 11v10' },
   { modulo: 'cotizacion', ruta: '/cotizaciones', etiqueta: 'Cotizaciones', icono: 'M6 3h9l5 5v13H6zM14 3v5h5M9 13h6M9 17h6' },
   { modulo: 'reportes', ruta: '/reportes', etiqueta: 'Reportes', icono: 'M4 20V10m6 10V4m6 16v-7' },
+  { modulo: 'asistencia', ruta: '/asistencia', etiqueta: 'Asistencia', icono: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v4l3 2' },
   { modulo: 'usuarios', ruta: '/administracion', etiqueta: 'Administración', icono: 'M10.3 3.4a1.9 1.9 0 0 1 3.4 0l.4.9a1.9 1.9 0 0 0 2.3 1l.9-.3a1.9 1.9 0 0 1 2.4 2.4l-.3.9a1.9 1.9 0 0 0 1 2.3l.9.4a1.9 1.9 0 0 1 0 3.4l-.9.4a1.9 1.9 0 0 0-1 2.3l.3.9a1.9 1.9 0 0 1-2.4 2.4l-.9-.3a1.9 1.9 0 0 0-2.3 1l-.4.9a1.9 1.9 0 0 1-3.4 0l-.4-.9a1.9 1.9 0 0 0-2.3-1l-.9.3a1.9 1.9 0 0 1-2.4-2.4l.3-.9a1.9 1.9 0 0 0-1-2.3l-.9-.4a1.9 1.9 0 0 1 0-3.4l.9-.4a1.9 1.9 0 0 0 1-2.3l-.3-.9a1.9 1.9 0 0 1 2.4-2.4l.9.3a1.9 1.9 0 0 0 2.3-1l.4-.9ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z' }
 ];
 

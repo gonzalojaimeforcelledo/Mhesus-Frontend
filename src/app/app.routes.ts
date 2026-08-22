@@ -108,6 +108,11 @@ export const routes: Routes = [
         path: 'administracion',
         canActivate: [moduloGuard('usuarios')],
         loadComponent: () => import('./features/administracion/administracion.component').then((m) => m.AdministracionComponent)
+      },
+      {
+        path: 'asistencia',
+        canActivate: [moduloGuard('asistencia')],
+        loadComponent: () => import('./features/asistencia/asistencia-admin.component').then((m) => m.AsistenciaAdminComponent)
       }
     ]
   },

@@ -167,6 +167,7 @@ export interface MovimientoInventario {
   cantidad: number;
   otId: string | null;
   usuarioId: string;
+  nota?: string | null;
   creadoEn: string;
 }
 

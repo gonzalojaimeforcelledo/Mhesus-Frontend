@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { StoreService } from '../../core/services/store.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NivelProducto, nivelVistaProducto, permisoDe } from '../../core/services/permissions';
-import { exportarProductosExcel, leerProductosDesdeArchivo } from './excel.util';
+import { descargarPlantillaIngresoStock, exportarProductosExcel, leerIngresoStockDesdeArchivo, leerProductosDesdeArchivo } from './excel.util';
 import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MODELO } from '../../core/models/models';
 
 @Component({
@@ -29,11 +29,30 @@ import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MOD
               <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
               Exportar a Excel
             </button>
-            <button (click)="archivoImportar.click()" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500 flex items-center gap-2">
+            <button (click)="archivoImportar.click()" title="Reemplaza los datos del producto (incluido el stock) por lo que traiga el archivo" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500 flex items-center gap-2">
               <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0-4 4m4-4 4 4M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg>
               Importar desde Excel
             </button>
             <input #archivoImportar type="file" accept=".xlsx,.xls,.csv" class="hidden" (change)="importar($event)" />
+            <div class="relative">
+              <button (click)="menuIngresoAbierto.set(!menuIngresoAbierto())" title="Suma cantidad al stock que el producto ya tiene, no lo reemplaza — para cuando llega mercadería nueva" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500 flex items-center gap-2">
+                <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16m8-8H4"/></svg>
+                Ingreso de stock
+              </button>
+              @if (menuIngresoAbierto()) {
+                <div class="absolute right-0 mt-1 w-64 bg-surface border border-ink-100 rounded-lg shadow-panel z-20 py-1">
+                  <button (click)="descargarPlantilla()" class="w-full text-left px-3 py-2.5 text-sm hover:bg-ink-50 flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                    Descargar plantilla
+                  </button>
+                  <button (click)="archivoIngreso.click(); menuIngresoAbierto.set(false)" class="w-full text-left px-3 py-2.5 text-sm hover:bg-ink-50 flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" class="w-4 h-4 text-ink-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0-4 4m4-4 4 4M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg>
+                    Subir Excel de ingreso
+                  </button>
+                </div>
+              }
+            </div>
+            <input #archivoIngreso type="file" accept=".xlsx,.xls,.csv" class="hidden" (change)="ingresarStock($event)" />
             <a routerLink="/almacen/nuevo" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900">
               + Nuevo producto
             </a>
@@ -213,6 +232,7 @@ import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MOD
                 <th class="py-2.5 px-4 font-medium">Cantidad</th>
                 <th class="py-2.5 px-4 font-medium">OT</th>
                 <th class="py-2.5 px-4 font-medium">Usuario</th>
+                <th class="py-2.5 px-4 font-medium">Nota</th>
               </tr>
             </thead>
             <tbody>
@@ -224,9 +244,10 @@ import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MOD
                   <td class="py-3 px-4 text-ink-700">{{ m.cantidad }}</td>
                   <td class="py-3 px-4 font-mono text-xs text-ink-500">{{ m.otId ? store.ot(m.otId)?.numeroOT : '—' }}</td>
                   <td class="py-3 px-4 text-ink-500">{{ store.usuario(m.usuarioId)?.nombre }}</td>
+                  <td class="py-3 px-4 text-ink-500">{{ m.nota || '—' }}</td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="py-8 text-center text-ink-500">Sin movimientos.</td></tr>
+                <tr><td colspan="7" class="py-8 text-center text-ink-500">Sin movimientos.</td></tr>
               }
             </tbody>
           </table>
@@ -333,6 +354,7 @@ export class AlmacenComponent {
   stockAbierto = signal<string | null>(null);
   menuAbierto = signal<string | null>(null);
   mensajeImportacion = signal<string | null>(null);
+  menuIngresoAbierto = signal(false);
   errorImportacion = signal(false);
 
   productoEditando = signal<Producto | null>(null);
@@ -490,6 +512,34 @@ export class AlmacenComponent {
       const { creados, actualizados } = await this.store.importarProductos(filas);
       this.errorImportacion.set(false);
       this.mensajeImportacion.set(`Importación completa: ${creados} producto(s) nuevo(s), ${actualizados} actualizado(s).`);
+    } catch {
+      this.errorImportacion.set(true);
+      this.mensajeImportacion.set('No se pudo leer el archivo. Asegúrate de subir un .xlsx, .xls o .csv válido.');
+    } finally {
+      input.value = '';
+    }
+  }
+
+  descargarPlantilla(): void {
+    descargarPlantillaIngresoStock();
+    this.menuIngresoAbierto.set(false);
+  }
+
+  async ingresarStock(evento: Event): Promise<void> {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (!archivo) return;
+    try {
+      const items = await leerIngresoStockDesdeArchivo(archivo);
+      if (!items.length) {
+        this.errorImportacion.set(true);
+        this.mensajeImportacion.set('El archivo no tiene filas válidas. Verifica que incluya columnas Código y Cantidad a agregar.');
+        return;
+      }
+      const { encontrados, noEncontrados } = await this.store.ingresarStockPorExcel(items);
+      this.errorImportacion.set(noEncontrados.length > 0 && encontrados === 0);
+      const detalleNoEncontrados = noEncontrados.length ? ` No se encontraron estos códigos: ${noEncontrados.join(', ')}.` : '';
+      this.mensajeImportacion.set(`Ingreso de stock: ${encontrados} producto(s) actualizado(s).${detalleNoEncontrados}`);
     } catch {
       this.errorImportacion.set(true);
       this.mensajeImportacion.set('No se pudo leer el archivo. Asegúrate de subir un .xlsx, .xls o .csv válido.');

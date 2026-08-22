@@ -285,6 +285,14 @@ export class StoreService {
     return { creados, actualizados: resultados.length - creados };
   }
 
+  /** Ingreso de stock por Excel: suma la cantidad al stock que el producto ya tenía (no lo reemplaza), y deja un movimiento con la nota escrita en el archivo. */
+  async ingresarStockPorExcel(items: { codigo: string; cantidad: number; nota: string }[]): Promise<{ encontrados: number; noEncontrados: string[] }> {
+    const resultados = await this.api.post<{ codigo: string; encontrado: boolean; nombre: string | null; stockNuevo: number | null }[]>('/productos/ingreso-stock', items);
+    await Promise.all([this.cargarProductos(), this.cargarMovimientos()]);
+    const noEncontrados = resultados.filter((r) => !r.encontrado).map((r) => r.codigo);
+    return { encontrados: resultados.length - noEncontrados.length, noEncontrados };
+  }
+
   async ajustarStock(productoId: string, cantidad: number, _usuarioId: string): Promise<void> {
     await this.api.patch(`/productos/${productoId}/ajustar-stock`, { delta: cantidad });
     await Promise.all([this.cargarProductos(), this.cargarMovimientos()]);

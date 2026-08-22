@@ -47,7 +47,53 @@ function valorNumero(fila: Record<string, unknown>, ...claves: string[]): number
   return 0;
 }
 
-/** Lee un archivo .xlsx/.csv y devuelve filas de producto normalizadas. Acepta encabezados en español o inglés. */
+export interface FilaIngresoStock {
+  codigo: string;
+  cantidad: number;
+  nota: string;
+}
+
+/** Descarga una plantilla en blanco (con un ejemplo) para el ingreso de stock nuevo. */
+export function descargarPlantillaIngresoStock(): void {
+  const filas = [
+    { 'Código': 'PAS-DEL-01', 'Cantidad a agregar': 20, 'Descripción': 'Pedido ingresado' },
+    { 'Código': 'ACE-10W40', 'Cantidad a agregar': 5, 'Descripción': 'Corrección de inventario' }
+  ];
+  const hoja = XLSX.utils.json_to_sheet(filas);
+  hoja['!cols'] = [{ wch: 16 }, { wch: 18 }, { wch: 32 }];
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, 'Ingreso de stock');
+  XLSX.writeFile(libro, 'mhesus-plantilla-ingreso-stock.xlsx');
+}
+
+/** Lee un archivo .xlsx/.csv de ingreso de stock: código del producto + cantidad a SUMAR + nota/motivo. */
+export function leerIngresoStockDesdeArchivo(archivo: File): Promise<FilaIngresoStock[]> {
+  return new Promise((resolve, reject) => {
+    const lector = new FileReader();
+    lector.onload = (evento) => {
+      try {
+        const datos = new Uint8Array(evento.target?.result as ArrayBuffer);
+        const libro = XLSX.read(datos, { type: 'array' });
+        const hoja = libro.Sheets[libro.SheetNames[0]];
+        const filas = XLSX.utils.sheet_to_json(hoja, { defval: '' }) as Record<string, unknown>[];
+
+        const items: FilaIngresoStock[] = filas
+          .map((f: Record<string, unknown>) => ({
+            codigo: valorTexto(f, 'Código', 'Codigo', 'codigo', 'code', 'Code'),
+            cantidad: valorNumero(f, 'Cantidad a agregar', 'Cantidad', 'cantidad', 'quantity'),
+            nota: valorTexto(f, 'Descripción', 'Descripcion', 'descripcion', 'Nota', 'nota', 'description')
+          }))
+          .filter((i: FilaIngresoStock) => i.codigo && i.cantidad > 0);
+
+        resolve(items);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    lector.onerror = () => reject(lector.error);
+    lector.readAsArrayBuffer(archivo);
+  });
+}
 export function leerProductosDesdeArchivo(archivo: File): Promise<FilaProductoExcel[]> {
   return new Promise((resolve, reject) => {
     const lector = new FileReader();

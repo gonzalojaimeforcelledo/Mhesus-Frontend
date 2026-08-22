@@ -173,14 +173,14 @@ const ACCESOS: AccesoRapido[] = [
         </div>
 
         <div class="grid lg:grid-cols-3 gap-6">
-          <!-- Flujo de OT: para Recepción, tablero tipo Trello (solo ver, no se puede arrastrar para
-               cambiar de estado a mano — el estado avanza solo según las acciones reales) -->
-          @if (esRecepcion()) {
+          <!-- Flujo de OT del día: para Recepción y Administración, tablero tipo Trello (solo ver,
+               no se puede arrastrar para cambiar de estado a mano — el estado avanza solo según las acciones reales) -->
+          @if (esRecepcion() || esAdministracion()) {
             <div class="lg:col-span-3 panel p-5 min-w-0">
               <div class="flex items-center justify-between mb-4">
                 <div>
-                  <h2 class="font-display font-600 text-ink-900">Órdenes de trabajo por estado</h2>
-                  <p class="text-xs text-ink-400 mt-0.5">Solo consulta — el estado avanza solo según lo que realmente pasa con cada OT.</p>
+                  <h2 class="font-display font-600 text-ink-900">Órdenes de trabajo por estado — hoy</h2>
+                  <p class="text-xs text-ink-400 mt-0.5">Solo las OT creadas hoy. El estado avanza solo según lo que realmente pasa con cada OT.</p>
                 </div>
                 <a routerLink="/ot" class="text-xs font-medium text-brand-700 hover:underline shrink-0">Ver todas →</a>
               </div>
@@ -224,7 +224,7 @@ const ACCESOS: AccesoRapido[] = [
           }
 
           <!-- Actividad reciente -->
-          <div class="panel p-5" [class.lg:col-span-3]="esRecepcion()">
+          <div class="panel p-5" [class.lg:col-span-3]="esRecepcion() || esAdministracion()">
             <h2 class="font-display font-600 text-ink-900 mb-4">Actividad reciente</h2>
             <ul class="space-y-3">
               @for (a of actividadReciente(); track a.id) {
@@ -252,6 +252,7 @@ export class DashboardComponent {
   esAlmacen = computed(() => this.auth.rol() === 'almacen');
   esMecanico = computed(() => this.auth.rol() === 'mecanico');
   esRecepcion = computed(() => this.auth.rol() === 'recepcion');
+  esAdministracion = computed(() => this.auth.rol() === 'administracion');
 
   accesosVisibles = computed(() => {
     const rol = this.auth.rol();
@@ -276,11 +277,17 @@ export class DashboardComponent {
     return mapa;
   });
 
-  /** Tablero tipo Trello (solo Recepción): OTs agrupadas por estado, más recientes primero. */
+  private claveFechaLocal(fecha: Date): string {
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+  }
+
+  /** Tablero tipo Trello (Recepción/Administración): solo las OT creadas HOY (fecha local), agrupadas por estado, más recientes primero. */
   otsPorEstado = computed(() => {
+    const claveHoy = this.claveFechaLocal(new Date());
     const mapa: Record<string, OrdenTrabajo[]> = {};
     for (const e of this.estados) mapa[e] = [];
-    for (const o of [...this.store.ots()].sort((a, b) => new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime())) {
+    const deHoy = this.store.ots().filter((o) => this.claveFechaLocal(new Date(o.creadoEn)) === claveHoy);
+    for (const o of deHoy.sort((a, b) => new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime())) {
       (mapa[o.estado] ??= []).push(o);
     }
     return mapa;

@@ -16,7 +16,7 @@ interface FilaCarrito extends ItemVenta {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="space-y-6 max-w-5xl">
+    <div class="space-y-6">
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 class="font-display font-700 text-2xl text-ink-900">Nueva venta</h1>
@@ -24,130 +24,134 @@ interface FilaCarrito extends ItemVenta {
         </div>
       </div>
 
-      <div class="panel p-6 space-y-5">
-        <div>
-          <label class="text-sm font-medium text-ink-700 block mb-2">¿Qué vas a generar?</label>
-          <div class="grid sm:grid-cols-3 gap-3">
-            <button type="button" (click)="modo.set('oficial')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'oficial' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
-              <p class="text-sm font-medium text-ink-900">Boleta / Factura</p>
-              <p class="text-xs text-ink-500 mt-0.5">Comprobante oficial. Descuenta stock.</p>
-            </button>
-            <button type="button" (click)="modo.set('nota_venta')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'nota_venta' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
-              <p class="text-sm font-medium text-ink-900">Nota de venta</p>
-              <p class="text-xs text-ink-500 mt-0.5">No es oficial ante SUNAT. Descuenta stock igual.</p>
-            </button>
-            <button type="button" (click)="modo.set('proforma')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'proforma' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
-              <p class="text-sm font-medium text-ink-900">Proforma</p>
-              <p class="text-xs text-ink-500 mt-0.5">Solo cotización. No descuenta stock.</p>
-            </button>
-          </div>
-        </div>
-
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div class="relative">
-            <label class="text-sm font-medium text-ink-700">Cliente</label>
-            <input
-              [(ngModel)]="dniBusqueda" name="dniBusqueda" (ngModelChange)="onDniChange($event)"
-              class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500"
-              placeholder="Buscar por DNI, o deja vacío para 'Cliente varios'"
-            />
-            @if (sugerenciasClientes().length) {
-              <div class="absolute z-10 mt-1 w-full bg-surface border border-ink-100 rounded-lg shadow-panel max-h-48 overflow-y-auto">
-                @for (c of sugerenciasClientes(); track c.id) {
-                  <button type="button" (click)="elegirCliente(c)" class="w-full text-left px-3 py-2 text-sm hover:bg-ink-50">
-                    {{ c.nombres }} {{ c.apellidos }} <span class="text-ink-400 font-mono">· {{ c.dni }}</span>
-                  </button>
-                }
-              </div>
-            }
-            @if (clienteElegido(); as c) {
-              <p class="text-xs text-emerald-600 mt-1.5">{{ c.nombres }} {{ c.apellidos }} · {{ c.dni }}</p>
-            }
-          </div>
-
-          @if (modo() === 'oficial') {
-            <div>
-              <label class="text-sm font-medium text-ink-700">Tipo de comprobante</label>
-              <select [(ngModel)]="tipo" name="tipo" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500">
-                <option value="BOLETA">Boleta de venta</option>
-                <option value="FACTURA">Factura</option>
-              </select>
+      <div class="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
+        <div class="panel p-6 space-y-5">
+          <div>
+            <label class="text-sm font-medium text-ink-700 block mb-2">¿Qué vas a generar?</label>
+            <div class="grid sm:grid-cols-3 gap-3">
+              <button type="button" (click)="modo.set('oficial')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'oficial' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
+                <p class="text-sm font-medium text-ink-900">Boleta / Factura</p>
+                <p class="text-xs text-ink-500 mt-0.5">Comprobante oficial. Descuenta stock.</p>
+              </button>
+              <button type="button" (click)="modo.set('nota_venta')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'nota_venta' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
+                <p class="text-sm font-medium text-ink-900">Nota de venta</p>
+                <p class="text-xs text-ink-500 mt-0.5">No es oficial ante SUNAT. Descuenta stock igual.</p>
+              </button>
+              <button type="button" (click)="modo.set('proforma')" class="text-left rounded-lg border-2 p-3 transition-colors" [class]="modo() === 'proforma' ? 'border-navy-700 bg-navy-500/5' : 'border-ink-100 hover:border-ink-200'">
+                <p class="text-sm font-medium text-ink-900">Proforma</p>
+                <p class="text-xs text-ink-500 mt-0.5">Solo cotización. No descuenta stock.</p>
+              </button>
             </div>
-          }
-        </div>
+          </div>
 
-        <!-- Buscador / carrito de productos -->
-        <div>
-          <label class="text-sm font-medium text-ink-700">Buscar producto</label>
-          <div class="relative mt-1">
-            <input
-              [ngModel]="buscarProducto()" (ngModelChange)="buscarProducto.set($event)" name="buscarProducto"
-              class="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500"
-              placeholder="Buscar por código o nombre..."
-            />
-            @if (sugerenciasProductos().length) {
-              <div class="absolute z-10 mt-1 w-full bg-surface border border-ink-100 rounded-lg shadow-panel max-h-56 overflow-y-auto">
-                @for (p of sugerenciasProductos(); track p.id) {
-                  <button type="button" (click)="agregarProducto(p)" class="w-full text-left px-3 py-2 text-sm hover:bg-ink-50 flex justify-between">
-                    <span>{{ p.nombre }} <span class="text-ink-400 font-mono">· {{ p.codigo }}</span></span>
-                    <span class="text-ink-500">S/ {{ p.precio.toFixed(2) }}</span>
-                  </button>
-                }
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="relative">
+              <label class="text-sm font-medium text-ink-700">Cliente</label>
+              <input
+                [(ngModel)]="dniBusqueda" name="dniBusqueda" (ngModelChange)="onDniChange($event)"
+                class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500"
+                placeholder="Buscar por DNI, o deja vacío para 'Cliente varios'"
+              />
+              @if (sugerenciasClientes().length) {
+                <div class="absolute z-10 mt-1 w-full bg-surface border border-ink-100 rounded-lg shadow-panel max-h-48 overflow-y-auto">
+                  @for (c of sugerenciasClientes(); track c.id) {
+                    <button type="button" (click)="elegirCliente(c)" class="w-full text-left px-3 py-2 text-sm hover:bg-ink-50">
+                      {{ c.nombres }} {{ c.apellidos }} <span class="text-ink-400 font-mono">· {{ c.dni }}</span>
+                    </button>
+                  }
+                </div>
+              }
+              @if (clienteElegido(); as c) {
+                <p class="text-xs text-emerald-600 mt-1.5">{{ c.nombres }} {{ c.apellidos }} · {{ c.dni }}</p>
+              }
+            </div>
+
+            @if (modo() === 'oficial') {
+              <div>
+                <label class="text-sm font-medium text-ink-700">Tipo de comprobante</label>
+                <select [(ngModel)]="tipo" name="tipo" class="mt-1 w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500">
+                  <option value="BOLETA">Boleta de venta</option>
+                  <option value="FACTURA">Factura</option>
+                </select>
               </div>
             }
           </div>
-        </div>
 
-        <div class="border border-ink-100 rounded-lg overflow-hidden">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-left text-ink-500 bg-ink-50/60">
-                <th class="py-2 px-3 font-medium">Descripción</th>
-                <th class="py-2 px-3 font-medium w-24">Cant.</th>
-                <th class="py-2 px-3 font-medium w-28">P. Unit.</th>
-                <th class="py-2 px-3 font-medium w-28">Importe</th>
-                <th class="py-2 px-3 w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (fila of carrito(); track fila.id) {
-                <tr class="border-t border-ink-50">
-                  <td class="py-2 px-3">{{ fila.descripcion }}</td>
-                  <td class="py-2 px-3">
-                    <input type="number" min="1" [ngModel]="fila.cantidad" (ngModelChange)="cambiarCantidad(fila.id, $event)" class="w-16 rounded border border-ink-100 px-2 py-1 text-sm" />
-                  </td>
-                  <td class="py-2 px-3 text-ink-500">S/ {{ fila.precioUnitario.toFixed(2) }}</td>
-                  <td class="py-2 px-3 font-medium text-ink-900">S/ {{ (fila.cantidad * fila.precioUnitario).toFixed(2) }}</td>
-                  <td class="py-2 px-3">
-                    <button (click)="quitarFila(fila.id)" class="text-ink-300 hover:text-crimson-500">
-                      <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          <!-- Buscador / carrito de productos -->
+          <div>
+            <label class="text-sm font-medium text-ink-700">Buscar producto</label>
+            <div class="relative mt-1">
+              <input
+                [ngModel]="buscarProducto()" (ngModelChange)="buscarProducto.set($event)" name="buscarProducto"
+                class="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500"
+                placeholder="Buscar por código o nombre..."
+              />
+              @if (sugerenciasProductos().length) {
+                <div class="absolute z-10 mt-1 w-full bg-surface border border-ink-100 rounded-lg shadow-panel max-h-56 overflow-y-auto">
+                  @for (p of sugerenciasProductos(); track p.id) {
+                    <button type="button" (click)="agregarProducto(p)" class="w-full text-left px-3 py-2 text-sm hover:bg-ink-50 flex justify-between">
+                      <span>{{ p.nombre }} <span class="text-ink-400 font-mono">· {{ p.codigo }}</span></span>
+                      <span class="text-ink-500">S/ {{ p.precio.toFixed(2) }}</span>
                     </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr><td colspan="5" class="py-8 text-center text-ink-400">Busca y agrega productos para empezar.</td></tr>
+                  }
+                </div>
               }
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          <div class="border border-ink-100 rounded-lg overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-ink-500 bg-ink-50/60">
+                  <th class="py-2 px-3 font-medium">Descripción</th>
+                  <th class="py-2 px-3 font-medium w-24">Cant.</th>
+                  <th class="py-2 px-3 font-medium w-28">P. Unit.</th>
+                  <th class="py-2 px-3 font-medium w-28">Importe</th>
+                  <th class="py-2 px-3 w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of carrito(); track fila.id) {
+                  <tr class="border-t border-ink-50">
+                    <td class="py-2 px-3">{{ fila.descripcion }}</td>
+                    <td class="py-2 px-3">
+                      <input type="number" min="1" [ngModel]="fila.cantidad" (ngModelChange)="cambiarCantidad(fila.id, $event)" class="w-16 rounded border border-ink-100 px-2 py-1 text-sm" />
+                    </td>
+                    <td class="py-2 px-3 text-ink-500">S/ {{ fila.precioUnitario.toFixed(2) }}</td>
+                    <td class="py-2 px-3 font-medium text-ink-900">S/ {{ (fila.cantidad * fila.precioUnitario).toFixed(2) }}</td>
+                    <td class="py-2 px-3">
+                      <button (click)="quitarFila(fila.id)" class="text-ink-300 hover:text-crimson-500">
+                        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="py-8 text-center text-ink-400">Busca y agrega productos para empezar.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div class="flex justify-end">
-          <div class="w-64 space-y-1.5">
+        <!-- Resumen: fijo a la derecha en pantallas grandes -->
+        <div class="panel p-6 space-y-4 lg:sticky lg:top-20">
+          <h2 class="font-display font-700 text-ink-900">Resumen</h2>
+          <div class="space-y-1.5">
             <div class="flex justify-between text-sm text-ink-500"><span>Subtotal</span><span>S/ {{ subtotal().toFixed(2) }}</span></div>
             <div class="flex justify-between text-sm text-ink-500"><span>IGV (18%)</span><span>S/ {{ igv().toFixed(2) }}</span></div>
-            <div class="flex justify-between font-display font-700 text-lg text-navy-700 pt-1 border-t border-ink-100"><span>TOTAL</span><span>S/ {{ total().toFixed(2) }}</span></div>
+            <div class="flex justify-between font-display font-700 text-2xl text-navy-700 pt-2 mt-1 border-t border-ink-100"><span>TOTAL</span><span>S/ {{ total().toFixed(2) }}</span></div>
           </div>
-        </div>
 
-        @if (mensajeError()) {
-          <p class="text-sm text-crimson-500">{{ mensajeError() }}</p>
-        }
+          @if (mensajeError()) {
+            <p class="text-sm text-crimson-500">{{ mensajeError() }}</p>
+          }
 
-        <div class="flex justify-end gap-3">
-          <a routerLink="/ventas" class="px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500">Cancelar</a>
-          <button (click)="procesar()" [disabled]="!carrito().length || procesando()" class="px-6 py-2.5 rounded-lg bg-navy-700 hover:bg-navy-900 disabled:opacity-50 text-white text-sm font-medium">
-            {{ procesando() ? 'Procesando...' : 'PROCESAR' }}
-          </button>
+          <div class="space-y-2 pt-2">
+            <button (click)="procesar()" [disabled]="!carrito().length || procesando()" class="w-full px-6 py-2.5 rounded-lg bg-navy-700 hover:bg-navy-900 disabled:opacity-50 text-white text-sm font-medium">
+              {{ procesando() ? 'Procesando...' : 'PROCESAR' }}
+            </button>
+            <a routerLink="/ventas" class="block text-center w-full px-4 py-2 rounded-lg border border-ink-100 text-sm font-medium hover:border-navy-500">Cancelar</a>
+          </div>
         </div>
       </div>
     </div>

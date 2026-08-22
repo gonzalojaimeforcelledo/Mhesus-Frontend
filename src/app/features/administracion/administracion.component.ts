@@ -152,58 +152,60 @@ import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
       }
 
       @if (tab() === 'igv') {
-        @if (resumenIgv(); as r) {
-          <div class="panel p-6 max-w-lg" [class]="r.debePagar ? 'border-2 border-crimson-500' : 'border-2 border-emerald-500'">
-            <div class="flex items-center gap-3 mb-1">
-              <span class="w-3 h-3 rounded-full shrink-0" [class]="r.debePagar ? 'bg-crimson-500' : 'bg-emerald-500'"></span>
-              <h2 class="font-display font-700 text-lg" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">
-                {{ r.debePagar ? 'Hay IGV por pagar este mes' : 'No hay IGV por pagar este mes' }}
-              </h2>
-            </div>
-            <p class="text-sm text-ink-500 mb-4">{{ nombreMesActual() }}</p>
+        <div class="grid lg:grid-cols-2 gap-4 items-start">
+          @if (resumenIgv(); as r) {
+            <div class="panel p-6" [class]="r.debePagar ? 'border-2 border-crimson-500' : 'border-2 border-emerald-500'">
+              <div class="flex items-center gap-3 mb-1">
+                <span class="w-3 h-3 rounded-full shrink-0" [class]="r.debePagar ? 'bg-crimson-500' : 'bg-emerald-500'"></span>
+                <h2 class="font-display font-700 text-lg" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">
+                  {{ r.debePagar ? 'Hay IGV por pagar este mes' : 'No hay IGV por pagar este mes' }}
+                </h2>
+              </div>
+              <p class="text-sm text-ink-500 mb-4">{{ nombreMesActual() }}</p>
 
-            <div class="grid grid-cols-2 gap-3">
-              <div class="rounded-lg border border-ink-100 p-3">
-                <p class="text-xs text-ink-500">IGV de ventas</p>
-                <p class="font-display font-700 text-xl text-ink-900 mt-1">S/ {{ r.igvVentas.toFixed(2) }}</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-lg border border-ink-100 p-3">
+                  <p class="text-xs text-ink-500">IGV de ventas</p>
+                  <p class="font-display font-700 text-xl text-ink-900 mt-1">S/ {{ r.igvVentas.toFixed(2) }}</p>
+                </div>
+                <div class="rounded-lg border border-ink-100 p-3">
+                  <p class="text-xs text-ink-500">IGV de compras</p>
+                  <p class="font-display font-700 text-xl text-ink-900 mt-1">S/ {{ r.igvCompras.toFixed(2) }}</p>
+                </div>
               </div>
-              <div class="rounded-lg border border-ink-100 p-3">
-                <p class="text-xs text-ink-500">IGV de compras</p>
-                <p class="font-display font-700 text-xl text-ink-900 mt-1">S/ {{ r.igvCompras.toFixed(2) }}</p>
+              <div class="rounded-lg p-3 mt-3" [class]="r.debePagar ? 'bg-crimson-500/10' : 'bg-emerald-500/10'">
+                <p class="text-xs" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">IGV a pagar (ventas − compras)</p>
+                <p class="font-display font-700 text-2xl mt-1" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">S/ {{ r.igvAPagar.toFixed(2) }}</p>
               </div>
-            </div>
-            <div class="rounded-lg p-3 mt-3" [class]="r.debePagar ? 'bg-crimson-500/10' : 'bg-emerald-500/10'">
-              <p class="text-xs" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">IGV a pagar (ventas − compras)</p>
-              <p class="font-display font-700 text-2xl mt-1" [class]="r.debePagar ? 'text-crimson-500' : 'text-emerald-600'">S/ {{ r.igvAPagar.toFixed(2) }}</p>
-            </div>
 
-            @if (r.sinVentasEsteMes || r.sinComprasEsteMes) {
-              <div class="mt-4 rounded-lg border border-amber-400/40 bg-amber-400/5 p-3 flex items-start gap-2">
-                <svg viewBox="0 0 24 24" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-                <p class="text-xs text-amber-700">
-                  @if (r.sinVentasEsteMes) { Todavía no hay ventas registradas este mes. }
-                  @if (r.sinVentasEsteMes && r.sinComprasEsteMes) { <br /> }
-                  @if (r.sinComprasEsteMes) { Todavía no hay compras registradas este mes. }
-                  Este cálculo puede estar incompleto.
-                </p>
-              </div>
-            }
+              @if (r.sinVentasEsteMes || r.sinComprasEsteMes) {
+                <div class="mt-4 rounded-lg border border-amber-400/40 bg-amber-400/5 p-3 flex items-start gap-2">
+                  <svg viewBox="0 0 24 24" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                  <p class="text-xs text-amber-700">
+                    @if (r.sinVentasEsteMes) { Todavía no hay ventas registradas este mes. }
+                    @if (r.sinVentasEsteMes && r.sinComprasEsteMes) { <br /> }
+                    @if (r.sinComprasEsteMes) { Todavía no hay compras registradas este mes. }
+                    Este cálculo puede estar incompleto.
+                  </p>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="panel p-5">
+            <h2 class="font-display font-600 text-ink-900 mb-3">Registrar compra (crédito fiscal)</h2>
+            <form (ngSubmit)="crearCompra()" class="grid sm:grid-cols-2 gap-3">
+              <input [(ngModel)]="nuevaCompra.proveedor" name="cProveedor" placeholder="Proveedor" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <input [(ngModel)]="nuevaCompra.numeroComprobante" name="cComprobante" placeholder="N° de comprobante (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <input [(ngModel)]="nuevaCompra.descripcion" name="cDescripcion" placeholder="Descripción (opcional)" class="sm:col-span-2 rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <input [(ngModel)]="nuevaCompra.montoTotal" type="number" min="0" step="0.01" name="cMonto" placeholder="Monto total (S/, con IGV)" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <input [(ngModel)]="nuevaCompra.fecha" type="date" name="cFecha" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+              <button type="submit" class="sm:col-span-2 px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900 w-fit">Registrar compra</button>
+            </form>
           </div>
-        }
-
-        <div class="panel p-5 mt-4 max-w-2xl">
-          <h2 class="font-display font-600 text-ink-900 mb-3">Registrar compra (crédito fiscal)</h2>
-          <form (ngSubmit)="crearCompra()" class="grid sm:grid-cols-2 gap-3">
-            <input [(ngModel)]="nuevaCompra.proveedor" name="cProveedor" placeholder="Proveedor" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevaCompra.numeroComprobante" name="cComprobante" placeholder="N° de comprobante (opcional)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevaCompra.descripcion" name="cDescripcion" placeholder="Descripción (opcional)" class="sm:col-span-2 rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevaCompra.montoTotal" type="number" min="0" step="0.01" name="cMonto" placeholder="Monto total (S/, con IGV)" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <input [(ngModel)]="nuevaCompra.fecha" type="date" name="cFecha" required class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
-            <button type="submit" class="sm:col-span-2 px-4 py-2 rounded-lg bg-navy-700 text-white text-sm font-medium hover:bg-navy-900 w-fit">Registrar compra</button>
-          </form>
         </div>
 
-        <div class="panel overflow-x-auto mt-4 max-w-2xl">
+        <div class="panel overflow-x-auto mt-4">
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left text-ink-500 border-b border-ink-100">

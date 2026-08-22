@@ -1,9 +1,9 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { ApiService } from './api.service';
 import {
-  Cliente, Compra, Cotizacion, Deuda, Diagnostico, EstadoOT, ItemCotizacion, ItemVenta, Motocicleta,
-  MovimientoInventario, Notificacion, NivelCombustible, OrdenTrabajo, PedidoAlmacen, PedidoDetalle, Producto,
-  RegistroAuditoria, ResumenDia, ResumenIgv, Rol, Tarea, TipoDeuda, TipoTarea, TipoVenta, Usuario, Venta
+  Cliente, Compra, Cotizacion, Deuda, Diagnostico, EstadoOT, ItemCotizacion, ItemOferta, ItemVenta, Motocicleta,
+  MovimientoInventario, Notificacion, NivelCombustible, Oferta, OrdenTrabajo, PedidoAlmacen, PedidoDetalle, Producto,
+  RegistroAsistencia, RegistroAuditoria, ResumenDia, ResumenIgv, Rol, Tarea, TipoDeuda, TipoTarea, TipoVenta, Usuario, Venta
 } from '../models/models';
 
 /**
@@ -465,6 +465,74 @@ export class StoreService {
 
   async resumenIgvMensual(anio: number, mes: number): Promise<ResumenIgv> {
     return this.api.get<ResumenIgv>('/ventas/igv-mensual', { anio: String(anio), mes: String(mes) });
+  }
+
+  // ---------- Asistencia ----------
+  async miAsistenciaDeHoy(): Promise<RegistroAsistencia | null> {
+    try {
+      return await this.api.get<RegistroAsistencia>('/asistencia/hoy');
+    } catch {
+      return null;
+    }
+  }
+
+  async marcarLlegada(): Promise<{ ok: boolean; error?: string; registro?: RegistroAsistencia }> {
+    try {
+      const registro = await this.api.post<RegistroAsistencia>('/asistencia/llegada', {});
+      return { ok: true, registro };
+    } catch (err) {
+      return { ok: false, error: this.mensajeError(err) };
+    }
+  }
+
+  async marcarInicioAlmuerzo(): Promise<{ ok: boolean; error?: string; registro?: RegistroAsistencia }> {
+    try {
+      const registro = await this.api.post<RegistroAsistencia>('/asistencia/almuerzo/inicio', {});
+      return { ok: true, registro };
+    } catch (err) {
+      return { ok: false, error: this.mensajeError(err) };
+    }
+  }
+
+  async marcarFinAlmuerzo(): Promise<{ ok: boolean; error?: string; registro?: RegistroAsistencia }> {
+    try {
+      const registro = await this.api.post<RegistroAsistencia>('/asistencia/almuerzo/fin', {});
+      return { ok: true, registro };
+    } catch (err) {
+      return { ok: false, error: this.mensajeError(err) };
+    }
+  }
+
+  async marcarSalida(): Promise<{ ok: boolean; error?: string; registro?: RegistroAsistencia }> {
+    try {
+      const registro = await this.api.post<RegistroAsistencia>('/asistencia/salida', {});
+      return { ok: true, registro };
+    } catch (err) {
+      return { ok: false, error: this.mensajeError(err) };
+    }
+  }
+
+  // ---------- Ofertas (combos de productos) ----------
+  ofertas = signal<Oferta[]>([]);
+
+  async cargarOfertas(soloActivas = false): Promise<void> {
+    this.ofertas.set(await this.api.get<Oferta[]>('/ofertas', soloActivas ? { soloActivas: 'true' } : undefined));
+  }
+
+  async crearOferta(datos: { nombre: string; descripcion?: string; precioOferta: number; items: ItemOferta[] }): Promise<Oferta> {
+    const nueva = await this.api.post<Oferta>('/ofertas', datos);
+    await this.cargarOfertas();
+    return nueva;
+  }
+
+  async actualizarOferta(id: string, datos: { nombre: string; descripcion?: string; precioOferta: number; items: ItemOferta[] }): Promise<void> {
+    await this.api.put(`/ofertas/${id}`, datos);
+    await this.cargarOfertas();
+  }
+
+  async alternarOfertaActiva(id: string): Promise<void> {
+    await this.api.patch(`/ofertas/${id}/alternar-activa`);
+    await this.cargarOfertas();
   }
 
   // ---------- Helpers de lectura cruzada ----------

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StoreService } from '../../core/services/store.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Cliente, ItemVenta, TipoVenta } from '../../core/models/models';
+import { Cliente, ItemVenta, Oferta, TipoVenta } from '../../core/models/models';
 import { descargarVentaPdf } from './venta-pdf.util';
 
 interface FilaCarrito extends ItemVenta {
@@ -77,17 +77,26 @@ interface FilaCarrito extends ItemVenta {
             }
           </div>
 
-          <!-- Buscador / carrito de productos -->
+          <!-- Buscador / carrito de productos y ofertas -->
           <div>
-            <label class="text-sm font-medium text-ink-700">Buscar producto</label>
+            <label class="text-sm font-medium text-ink-700">Buscar producto u oferta</label>
             <div class="relative mt-1">
               <input
                 [ngModel]="buscarProducto()" (ngModelChange)="buscarProducto.set($event)" name="buscarProducto"
                 class="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-sm outline-none focus:border-navy-500"
-                placeholder="Buscar por código o nombre..."
+                placeholder="Buscar por código, nombre, o nombre de la oferta..."
               />
-              @if (sugerenciasProductos().length) {
+              @if (sugerenciasOfertas().length || sugerenciasProductos().length) {
                 <div class="absolute z-10 mt-1 w-full bg-surface border border-ink-100 rounded-lg shadow-panel max-h-56 overflow-y-auto">
+                  @for (o of sugerenciasOfertas(); track o.id) {
+                    <button type="button" (click)="agregarOferta(o)" class="w-full text-left px-3 py-2 text-sm hover:bg-wing-100/40 flex justify-between items-center">
+                      <span class="flex items-center gap-2">
+                        <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-600 shrink-0">OFERTA</span>
+                        {{ o.nombre }}
+                      </span>
+                      <span class="text-ink-500">S/ {{ o.precioOferta.toFixed(2) }}</span>
+                    </button>
+                  }
                   @for (p of sugerenciasProductos(); track p.id) {
                     <button type="button" (click)="agregarProducto(p)" class="w-full text-left px-3 py-2 text-sm hover:bg-ink-50 flex justify-between">
                       <span>{{ p.nombre }} <span class="text-ink-400 font-mono">· {{ p.codigo }}</span></span>
@@ -113,7 +122,12 @@ interface FilaCarrito extends ItemVenta {
               <tbody>
                 @for (fila of carrito(); track fila.id) {
                   <tr class="border-t border-ink-50">
-                    <td class="py-2 px-3">{{ fila.descripcion }}</td>
+                    <td class="py-2 px-3">
+                      @if (fila.ofertaId) {
+                        <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-600 mr-1.5">OFERTA</span>
+                      }
+                      {{ fila.descripcion }}
+                    </td>
                     <td class="py-2 px-3">
                       <input type="number" min="1" [ngModel]="fila.cantidad" (ngModelChange)="cambiarCantidad(fila.id, $event)" class="w-16 rounded border border-ink-100 px-2 py-1 text-sm" />
                     </td>
@@ -175,7 +189,7 @@ export class VentaNuevaComponent implements OnInit {
   constructor(public store: StoreService, private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([this.store.cargarClientes(), this.store.cargarProductos(), this.store.cargarMotos(), this.store.cargarOts(), this.store.cargarCotizaciones()]);
+    await Promise.all([this.store.cargarClientes(), this.store.cargarProductos(), this.store.cargarMotos(), this.store.cargarOts(), this.store.cargarCotizaciones(), this.store.cargarOfertas(true)]);
     this.otId = this.route.snapshot.queryParamMap.get('otId');
     if (this.otId) {
       await this.precargarDesdeOT(this.otId);
@@ -232,8 +246,22 @@ export class VentaNuevaComponent implements OnInit {
       .slice(0, 8);
   });
 
+  sugerenciasOfertas = computed(() => {
+    const q = this.buscarProducto().trim().toLowerCase();
+    if (q.length < 2) return [];
+    return this.store.ofertas()
+      .filter((o) => o.activo && o.nombre.toLowerCase().includes(q))
+      .slice(0, 5);
+  });
+
   agregarProducto(p: { id: string; nombre: string; precio: number }): void {
     this.carrito.update((filas) => [...filas, { id: `f${this.contador++}`, descripcion: p.nombre, cantidad: 1, precioUnitario: p.precio, productoId: p.id }]);
+    this.buscarProducto.set('');
+  }
+
+  /** Agrega una oferta (combo) como una sola línea del carrito — al procesar la venta, el backend descuenta stock de cada producto que la compone. */
+  agregarOferta(o: Oferta): void {
+    this.carrito.update((filas) => [...filas, { id: `f${this.contador++}`, descripcion: `Oferta: ${o.nombre}`, cantidad: 1, precioUnitario: o.precioOferta, ofertaId: o.id }]);
     this.buscarProducto.set('');
   }
 
@@ -262,7 +290,7 @@ export class VentaNuevaComponent implements OnInit {
         clienteId: c?.id ?? null,
         clienteNombre: c ? `${c.nombres} ${c.apellidos}` : 'Cliente varios',
         clienteDocumento: c?.dni ?? null,
-        items: this.carrito().map(({ descripcion, cantidad, precioUnitario, productoId }) => ({ descripcion, cantidad, precioUnitario, productoId }))
+        items: this.carrito().map(({ descripcion, cantidad, precioUnitario, productoId, ofertaId }) => ({ descripcion, cantidad, precioUnitario, productoId, ofertaId }))
       });
       if (!res.ok || !res.venta) {
         this.mensajeError.set(res.error ?? 'No se pudo procesar la venta.');

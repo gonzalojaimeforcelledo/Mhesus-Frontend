@@ -389,6 +389,8 @@ export class ShellComponent implements OnInit, OnDestroy {
       // Almacén tiene su propia cola de "Despacho" en vez de ver todas las Órdenes de Trabajo
       if (item.ruta === '/ot' && rol === 'almacen') return false;
       if (item.ruta === '/despacho' && permisoDe(rol, 'almacen') !== 'todo') return false;
+      // Administración no necesita ver Despacho ni Cotizaciones en el menú (ya las ve desde la OT / Facturación).
+      if ((item.ruta === '/despacho' || item.ruta === '/cotizaciones') && rol === 'administracion') return false;
       if (vistos.has(item.ruta)) return false;
       if (!puedeAcceder(rol, item.modulo)) return false;
       vistos.add(item.ruta);

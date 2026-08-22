@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,7 +6,7 @@ import { StoreService } from '../../core/services/store.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NivelProducto, nivelVistaProducto, permisoDe } from '../../core/services/permissions';
 import { descargarPlantillaIngresoStock, exportarProductosExcel, leerIngresoStockDesdeArchivo, leerProductosDesdeArchivo } from './excel.util';
-import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MODELO } from '../../core/models/models';
+import { ItemOferta, MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Oferta, Producto, SUBMODELOS_POR_MODELO } from '../../core/models/models';
 
 @Component({
   selector: 'app-almacen',
@@ -70,6 +70,7 @@ import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MOD
         <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 w-fit">
           <button (click)="tab.set('productos')" [class.bg-surface]="tab() === 'productos'" [class.shadow]="tab() === 'productos'" class="px-4 py-1.5 rounded-md text-xs font-medium">Catálogo</button>
           <button (click)="tab.set('movimientos')" [class.bg-surface]="tab() === 'movimientos'" [class.shadow]="tab() === 'movimientos'" class="px-4 py-1.5 rounded-md text-xs font-medium">Movimientos</button>
+          <button (click)="verOfertas()" [class.bg-surface]="tab() === 'ofertas'" [class.shadow]="tab() === 'ofertas'" class="px-4 py-1.5 rounded-md text-xs font-medium">Ofertas</button>
         </div>
       }
 
@@ -254,6 +255,77 @@ import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MOD
         </div>
       }
 
+      @if (tab() === 'ofertas') {
+        <div class="panel p-5">
+          <h2 class="font-display font-600 text-ink-900 mb-3">{{ ofertaEditando() ? 'Editar oferta' : 'Nueva oferta' }}</h2>
+          <div class="grid sm:grid-cols-2 gap-3 mb-3">
+            <input [(ngModel)]="formOferta.nombre" name="ofNombre" placeholder="Nombre (ej. Kit de mantenimiento)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="formOferta.precioOferta" type="number" min="0" step="0.01" name="ofPrecio" placeholder="Precio de la oferta (S/)" class="rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            <input [(ngModel)]="formOferta.descripcion" name="ofDescripcion" placeholder="Descripción (opcional)" class="sm:col-span-2 rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+          </div>
+
+          <p class="text-xs font-medium text-ink-500 mb-2">Productos que incluye la oferta (el stock se descuenta de cada uno al venderla)</p>
+          <div class="relative mb-2">
+            <input [(ngModel)]="buscarProductoOferta" name="buscarProductoOferta" placeholder="Buscar producto por nombre o código..." class="w-full rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            @if (sugerenciasOferta().length) {
+              <div class="absolute z-10 mt-1 w-full bg-surface border border-ink-100 rounded-lg shadow-panel max-h-48 overflow-y-auto">
+                @for (p of sugerenciasOferta(); track p.id) {
+                  <button type="button" (click)="agregarProductoAOferta(p)" class="w-full text-left px-3 py-2 text-sm hover:bg-ink-50">{{ p.nombre }} <span class="text-ink-400 font-mono">· {{ p.codigo }}</span></button>
+                }
+              </div>
+            }
+          </div>
+          @for (item of formOfertaItems(); track item.productoId) {
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="flex-1 text-sm text-ink-700">{{ store.producto(item.productoId)?.nombre }}</span>
+              <input type="number" min="1" [ngModel]="item.cantidad" (ngModelChange)="cambiarCantidadOferta(item.productoId, $event)" class="w-16 rounded border border-ink-100 px-2 py-1 text-sm" />
+              <button (click)="quitarProductoDeOferta(item.productoId)" class="text-ink-300 hover:text-crimson-500 text-lg leading-none px-1">✕</button>
+            </div>
+          }
+
+          <div class="flex justify-end gap-2 mt-3">
+            @if (ofertaEditando()) {
+              <button type="button" (click)="cancelarEdicionOferta()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-ink-500 hover:bg-ink-50">Cancelar</button>
+            }
+            <button type="button" (click)="guardarOferta()" [disabled]="!formOferta.nombre || !formOfertaItems().length" class="px-4 py-2 rounded-lg bg-navy-700 text-white text-xs font-medium hover:bg-navy-900 disabled:opacity-40">
+              {{ ofertaEditando() ? 'Guardar cambios' : 'Crear oferta' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="panel overflow-x-auto mt-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-ink-500 border-b border-ink-100">
+                <th class="py-2.5 px-4 font-medium">Oferta</th>
+                <th class="py-2.5 px-4 font-medium">Incluye</th>
+                <th class="py-2.5 px-4 font-medium">Precio</th>
+                <th class="py-2.5 px-4 font-medium">Estado</th>
+                <th class="py-2.5 px-4 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of store.ofertas(); track o.id) {
+                <tr class="border-b border-ink-50" [class.opacity-50]="!o.activo">
+                  <td class="py-3 px-4 text-ink-900">{{ o.nombre }}</td>
+                  <td class="py-3 px-4 text-ink-500 text-xs">{{ descripcionItemsOferta(o) }}</td>
+                  <td class="py-3 px-4 text-ink-900 font-medium">S/ {{ o.precioOferta.toFixed(2) }}</td>
+                  <td class="py-3 px-4">
+                    <span class="text-xs font-medium px-2.5 py-1 rounded-full" [class]="o.activo ? 'text-emerald-600 bg-emerald-500/10' : 'text-ink-400 bg-ink-100'">{{ o.activo ? 'Activa' : 'Inactiva' }}</span>
+                  </td>
+                  <td class="py-3 px-4 flex items-center gap-3">
+                    <button (click)="editarOferta(o)" class="text-xs font-medium text-brand-700 hover:underline">Editar</button>
+                    <button (click)="store.alternarOfertaActiva(o.id)" class="text-xs font-medium text-navy-700 hover:underline">{{ o.activo ? 'Desactivar' : 'Activar' }}</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="py-8 text-center text-ink-500">Sin ofertas creadas todavía.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
       <!-- Modal: editar producto -->
       @if (productoEditando(); as p) {
         <div class="fixed inset-0 z-[60] bg-transparent flex items-center justify-center p-4" (click)="cerrarEdicion()">
@@ -348,8 +420,8 @@ import { MARCAS_MOTO, MarcaMoto, MODELOS_POR_MARCA, Producto, SUBMODELOS_POR_MOD
     </div>
   `
 })
-export class AlmacenComponent {
-  tab = signal<'productos' | 'movimientos'>('productos');
+export class AlmacenComponent implements OnInit {
+  tab = signal<'productos' | 'movimientos' | 'ofertas'>('productos');
   filtro = signal('');
   stockAbierto = signal<string | null>(null);
   menuAbierto = signal<string | null>(null);
@@ -368,6 +440,77 @@ export class AlmacenComponent {
   };
 
   constructor(public store: StoreService, private auth: AuthService) {}
+
+  ngOnInit(): void {
+    this.store.cargarOfertas();
+  }
+
+  // ---------- Ofertas ----------
+  ofertaEditando = signal<Oferta | null>(null);
+  buscarProductoOferta = '';
+  formOferta: { nombre: string; descripcion: string; precioOferta: number | null } = { nombre: '', descripcion: '', precioOferta: null };
+  private _formOfertaItems = signal<ItemOferta[]>([]);
+  formOfertaItems = this._formOfertaItems.asReadonly();
+
+  verOfertas(): void {
+    this.tab.set('ofertas');
+  }
+
+  sugerenciasOferta = computed(() => {
+    const q = this.buscarProductoOferta.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const yaAgregados = new Set(this._formOfertaItems().map((i) => i.productoId));
+    return this.store.productos()
+      .filter((p) => !yaAgregados.has(p.id) && (p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q)))
+      .slice(0, 8);
+  });
+
+  agregarProductoAOferta(p: Producto): void {
+    this._formOfertaItems.update((arr) => [...arr, { productoId: p.id, cantidad: 1 }]);
+    this.buscarProductoOferta = '';
+  }
+
+  cambiarCantidadOferta(productoId: string, cantidad: number): void {
+    this._formOfertaItems.update((arr) => arr.map((i) => (i.productoId === productoId ? { ...i, cantidad: Math.max(1, cantidad) } : i)));
+  }
+
+  quitarProductoDeOferta(productoId: string): void {
+    this._formOfertaItems.update((arr) => arr.filter((i) => i.productoId !== productoId));
+  }
+
+  editarOferta(o: Oferta): void {
+    this.ofertaEditando.set(o);
+    this.formOferta = { nombre: o.nombre, descripcion: o.descripcion ?? '', precioOferta: o.precioOferta };
+    this._formOfertaItems.set(o.items.map((i) => ({ ...i })));
+    this.tab.set('ofertas');
+  }
+
+  cancelarEdicionOferta(): void {
+    this.ofertaEditando.set(null);
+    this.formOferta = { nombre: '', descripcion: '', precioOferta: null };
+    this._formOfertaItems.set([]);
+  }
+
+  async guardarOferta(): Promise<void> {
+    if (!this.formOferta.nombre.trim() || !this._formOfertaItems().length) return;
+    const datos = {
+      nombre: this.formOferta.nombre.trim(),
+      descripcion: this.formOferta.descripcion.trim() || undefined,
+      precioOferta: this.formOferta.precioOferta ?? 0,
+      items: this._formOfertaItems()
+    };
+    const editando = this.ofertaEditando();
+    if (editando) {
+      await this.store.actualizarOferta(editando.id, datos);
+    } else {
+      await this.store.crearOferta(datos);
+    }
+    this.cancelarEdicionOferta();
+  }
+
+  descripcionItemsOferta(o: Oferta): string {
+    return o.items.map((i) => `${this.store.producto(i.productoId)?.nombre ?? '—'} x${i.cantidad}`).join(', ');
+  }
 
   /** mecánico: solo nombre · Recepción: código+precio, sin stock · Almacén/Admin: catálogo completo. */
   nivel = computed<NivelProducto>(() => nivelVistaProducto(this.auth.rol()!));

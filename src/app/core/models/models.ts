@@ -238,6 +238,7 @@ export interface ItemVenta {
   cantidad: number;
   precioUnitario: number;
   productoId?: string | null;
+  ofertaId?: string | null;
 }
 
 export interface Venta {
@@ -304,4 +305,33 @@ export interface ResumenIgv {
   debePagar: boolean;
   sinVentasEsteMes: boolean;
   sinComprasEsteMes: boolean;
+}
+
+// ---------- Asistencia ----------
+export interface RegistroAsistencia {
+  id: string;
+  usuarioId: string;
+  fecha: string;
+  horaLlegada: string | null;
+  horaInicioAlmuerzo: string | null;
+  horaFinAlmuerzo: string | null;
+  horaSalida: string | null;
+  creadoEn: string;
+}
+
+// ---------- Ofertas (combos de productos) ----------
+export interface ItemOferta {
+  productoId: string;
+  cantidad: number;
+}
+
+export interface Oferta {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  precioOferta: number;
+  items: ItemOferta[];
+  activo: boolean;
+  creadoPor: string;
+  creadoEn: string;
 }

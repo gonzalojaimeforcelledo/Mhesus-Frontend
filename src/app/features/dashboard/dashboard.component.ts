@@ -5,6 +5,7 @@ import { StoreService } from '../../core/services/store.service';
 import { AuthService } from '../../core/services/auth.service';
 import { EstadoOT, OrdenTrabajo, SECUENCIA_ESTADOS_OT } from '../../core/models/models';
 import { Modulo, puedeAcceder, permisoDe } from '../../core/services/permissions';
+import { AsistenciaWidgetComponent } from './asistencia-widget.component';
 
 interface AccesoRapido {
   modulo: Modulo;
@@ -27,7 +28,7 @@ const ACCESOS: AccesoRapido[] = [
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AsistenciaWidgetComponent],
   template: `
     <div class="space-y-6">
       <!-- Encabezado + accesos rápidos -->
@@ -57,6 +58,10 @@ const ACCESOS: AccesoRapido[] = [
           </div>
         </div>
       </div>
+
+      @if (esAlmacen() || esRecepcion() || esMecanico()) {
+        <app-asistencia-widget />
+      }
 
       @if (esAlmacen()) {
         <!-- Métricas de Almacén -->

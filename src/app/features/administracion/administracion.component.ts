@@ -16,12 +16,12 @@ import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
         <p class="text-sm text-ink-500">Gestión de usuarios, roles y auditoría del sistema.</p>
       </div>
 
-      <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 w-fit">
-        <button (click)="tab.set('usuarios')" [class.bg-surface]="tab() === 'usuarios'" [class.shadow]="tab() === 'usuarios'" class="px-4 py-1.5 rounded-md text-xs font-medium">Usuarios</button>
-        <button (click)="tab.set('deudas')" [class.bg-surface]="tab() === 'deudas'" [class.shadow]="tab() === 'deudas'" class="px-4 py-1.5 rounded-md text-xs font-medium">Deudas</button>
-        <button (click)="tab.set('igv')" [class.bg-surface]="tab() === 'igv'" [class.shadow]="tab() === 'igv'" class="px-4 py-1.5 rounded-md text-xs font-medium">IGV</button>
-        <button (click)="tab.set('auditoria')" [class.bg-surface]="tab() === 'auditoria'" [class.shadow]="tab() === 'auditoria'" class="px-4 py-1.5 rounded-md text-xs font-medium">Auditoría</button>
-        <button (click)="tab.set('sistema')" [class.bg-surface]="tab() === 'sistema'" [class.shadow]="tab() === 'sistema'" class="px-4 py-1.5 rounded-md text-xs font-medium">Sistema</button>
+      <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-1 sm:w-fit">
+        <button (click)="tab.set('usuarios')" [class.bg-surface]="tab() === 'usuarios'" [class.shadow]="tab() === 'usuarios'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Usuarios</button>
+        <button (click)="tab.set('deudas')" [class.bg-surface]="tab() === 'deudas'" [class.shadow]="tab() === 'deudas'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Deudas</button>
+        <button (click)="tab.set('igv')" [class.bg-surface]="tab() === 'igv'" [class.shadow]="tab() === 'igv'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">IGV</button>
+        <button (click)="tab.set('auditoria')" [class.bg-surface]="tab() === 'auditoria'" [class.shadow]="tab() === 'auditoria'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Auditoría</button>
+        <button (click)="tab.set('sistema')" [class.bg-surface]="tab() === 'sistema'" [class.shadow]="tab() === 'sistema'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Sistema</button>
       </div>
 
       @if (tab() === 'usuarios') {

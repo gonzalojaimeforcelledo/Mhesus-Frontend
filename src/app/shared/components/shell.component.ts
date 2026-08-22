@@ -104,7 +104,7 @@ const NAV: NavItem[] = [
             </button>
             <div class="min-w-0">
               <p class="text-xs text-ink-500 hidden sm:block">Sistema interno</p>
-              <p class="font-display font-600 text-ink-900 truncate">Panel de {{ nombreRol() }}</p>
+              <p class="font-display font-600 text-ink-900 truncate text-sm sm:text-base"><span class="hidden sm:inline">Panel de </span>{{ nombreRol() }}</p>
             </div>
           </div>
           <div class="flex items-center gap-2 sm:gap-4 shrink-0">

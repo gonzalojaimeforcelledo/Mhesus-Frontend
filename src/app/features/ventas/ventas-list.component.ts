@@ -24,11 +24,11 @@ const NOMBRE_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep
         <a routerLink="/ventas/nueva" class="px-4 py-2 rounded-lg bg-navy-700 hover:bg-navy-900 text-white text-sm font-medium">+ Nueva venta</a>
       </div>
 
-      <div class="flex gap-1 border-b border-ink-100">
+      <div class="flex gap-1 border-b border-ink-100 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         @for (t of tabsDisponibles; track t.id) {
           <button
             (click)="tab.set(t.id)"
-            class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
+            class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
             [class]="tab() === t.id ? 'border-navy-700 text-navy-700' : 'border-transparent text-ink-500 hover:text-ink-900'"
           >{{ t.etiqueta }}</button>
         }

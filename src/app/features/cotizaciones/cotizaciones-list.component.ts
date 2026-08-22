@@ -14,10 +14,10 @@ import { StoreService } from '../../core/services/store.service';
         <p class="text-sm text-ink-500">Consolidado de cotizaciones por Orden de Trabajo y su estado de autorización.</p>
       </div>
 
-      <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 w-fit">
-        <button (click)="filtro.set('todas')" [class.bg-surface]="filtro() === 'todas'" [class.shadow]="filtro() === 'todas'" class="px-4 py-1.5 rounded-md text-xs font-medium">Todas</button>
-        <button (click)="filtro.set('pendientes')" [class.bg-surface]="filtro() === 'pendientes'" [class.shadow]="filtro() === 'pendientes'" class="px-4 py-1.5 rounded-md text-xs font-medium">Pendientes de autorización</button>
-        <button (click)="filtro.set('autorizadas')" [class.bg-surface]="filtro() === 'autorizadas'" [class.shadow]="filtro() === 'autorizadas'" class="px-4 py-1.5 rounded-md text-xs font-medium">Autorizadas</button>
+      <div class="flex items-center gap-1 bg-ink-100 rounded-lg p-1 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-1 sm:w-fit">
+        <button (click)="filtro.set('todas')" [class.bg-surface]="filtro() === 'todas'" [class.shadow]="filtro() === 'todas'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Todas</button>
+        <button (click)="filtro.set('pendientes')" [class.bg-surface]="filtro() === 'pendientes'" [class.shadow]="filtro() === 'pendientes'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Pendientes de autorización</button>
+        <button (click)="filtro.set('autorizadas')" [class.bg-surface]="filtro() === 'autorizadas'" [class.shadow]="filtro() === 'autorizadas'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Autorizadas</button>
       </div>
 
       <div class="panel overflow-x-auto">

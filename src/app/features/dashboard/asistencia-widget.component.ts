@@ -52,7 +52,7 @@ import { RegistroAsistencia } from '../../core/models/models';
       @if (error()) {
         <p class="text-xs text-crimson-500 mt-3 break-words">{{ error() }}</p>
       }
-      <p class="text-[11px] text-ink-400 mt-3">Puedes marcar cada casillero en el momento que corresponda, en cualquier orden. La llegada y la salida solo se pueden marcar conectado al WiFi de MHESUS o MHESUS 5G.</p>
+      <p class="text-[11px] text-ink-400 mt-3">Puedes marcar cada casillero en el momento que corresponda, en cualquier orden. Los 4 marcados solo se pueden hacer conectado al WiFi de MHESUS o MHESUS 5G.</p>
     </div>
   `
 })

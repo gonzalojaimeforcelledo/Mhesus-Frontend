@@ -251,6 +251,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   private idsConocidos = new Set<string>();
   private toastTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private pollingNotificaciones?: ReturnType<typeof setInterval>;
+  private pollingRecordatorios?: ReturnType<typeof setInterval>;
+  private recordatoriosAvisadosEstaSesion = new Set<string>();
 
   // ---- Cierre de sesión por inactividad (token de sesión, ver AuthService) ----
   private readonly eventosActividad = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
@@ -287,6 +289,15 @@ export class ShellComponent implements OnInit, OnDestroy {
       this.mostrarAlertaStock.set(true);
     }
 
+    // Recordatorios del Calendario: si a una nota/recordatorio/recordatorio de moto de HOY
+    // ya le llegó su hora, avisa con una notificación flotante — igual al iniciar sesión que
+    // mientras se usa el sistema. Solo se apaga marcando la tarea como completada en el
+    // Calendario; si se cierra sesión y se vuelve a entrar sin completarla, vuelve a avisar.
+    if (rol && puedeAcceder(rol, 'calendario')) {
+      await this.revisarRecordatoriosDeHoy();
+      this.pollingRecordatorios = setInterval(() => this.revisarRecordatoriosDeHoy(), 30000);
+    }
+
     this.eventosActividad.forEach((ev) => window.addEventListener(ev, this.onActividad, { passive: true }));
     this.onActividad();
     // Respaldo: si el navegador pausa el setTimeout (pestaña en segundo plano), esto igual detecta la sesión vencida.
@@ -297,6 +308,7 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.pollingNotificaciones) clearInterval(this.pollingNotificaciones);
+    if (this.pollingRecordatorios) clearInterval(this.pollingRecordatorios);
     this.toastTimers.forEach((t) => clearTimeout(t));
     this.eventosActividad.forEach((ev) => window.removeEventListener(ev, this.onActividad));
     if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
@@ -320,6 +332,32 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Revisa las tareas de HOY del Calendario y avisa (notificación flotante) las que ya les llegó su hora y siguen sin completarse. */
+  private async revisarRecordatoriosDeHoy(): Promise<void> {
+    const ahora = new Date();
+    const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+    await this.store.cargarTareas(hoy, hoy);
+    const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+
+    for (const t of this.store.tareas()) {
+      if (t.completada || !t.hora) continue;
+      if (t.fecha !== hoy) continue;
+      if (t.hora > horaActual) continue; // todavía no le toca
+      if (this.recordatoriosAvisadosEstaSesion.has(t.id)) continue;
+
+      this.recordatoriosAvisadosEstaSesion.add(t.id);
+      const emoji = t.tipo === 'recordatorio_moto' ? '🏍' : t.tipo === 'recordatorio' ? '⏰' : '📝';
+      this.mostrarToast({
+        id: `recordatorio-${t.id}`,
+        usuarioId: this.auth.usuario()?.id ?? '',
+        mensaje: `${emoji} ${t.titulo} — ${t.hora}`,
+        otId: null,
+        leida: false,
+        creadoEn: new Date().toISOString()
+      });
+    }
+  }
+
   private mostrarToast(n: Notificacion): void {
     this.toasts.update((arr) => [...arr, n]);
     const timer = setTimeout(() => this.cerrarToast(n.id), 7000);
@@ -334,8 +372,12 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   async abrirToast(n: Notificacion): Promise<void> {
-    await this.store.marcarNotificacionLeida(n.id);
     this.cerrarToast(n.id);
+    if (n.id.startsWith('recordatorio-')) {
+      this.router.navigate(['/calendario']);
+      return;
+    }
+    await this.store.marcarNotificacionLeida(n.id);
     if (n.otId) this.router.navigate(['/ot', n.otId]);
   }
 

@@ -3,7 +3,7 @@ import { ApiService } from './api.service';
 import {
   Cliente, Compra, Cotizacion, Deuda, Diagnostico, EstadoOT, ItemCotizacion, ItemOferta, ItemVenta, Motocicleta,
   MovimientoInventario, Notificacion, NivelCombustible, Oferta, OrdenTrabajo, PedidoAlmacen, PedidoDetalle, Producto,
-  RegistroAsistencia, RegistroAuditoria, ResumenDia, ResumenIgv, Rol, Tarea, TipoDeuda, TipoTarea, TipoVenta, Usuario, Venta
+  RegistroAsistencia, RegistroAsistenciaAdmin, RegistroAuditoria, ResumenDia, ResumenIgv, Rol, Tarea, TipoDeuda, TipoTarea, TipoVenta, Usuario, Venta
 } from '../models/models';
 
 /**
@@ -510,6 +510,11 @@ export class StoreService {
     } catch (err) {
       return { ok: false, error: this.mensajeError(err) };
     }
+  }
+
+  /** Listado de asistencia de todo el personal, para el panel de Administración. Sin fechas, trae el mes actual. */
+  async listarAsistenciaAdmin(desde?: string, hasta?: string): Promise<RegistroAsistenciaAdmin[]> {
+    return this.api.get<RegistroAsistenciaAdmin[]>('/asistencia/admin', { desde, hasta });
   }
 
   // ---------- Ofertas (combos de productos) ----------

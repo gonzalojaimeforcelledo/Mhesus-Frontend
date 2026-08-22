@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StoreService } from '../../core/services/store.service';
 import { NOMBRE_ROL } from '../../core/services/permissions';
-import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
+import { Deuda, RegistroAsistenciaAdmin, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
 
 @Component({
   selector: 'app-administracion',
@@ -20,6 +20,7 @@ import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
         <button (click)="tab.set('usuarios')" [class.bg-surface]="tab() === 'usuarios'" [class.shadow]="tab() === 'usuarios'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Usuarios</button>
         <button (click)="tab.set('deudas')" [class.bg-surface]="tab() === 'deudas'" [class.shadow]="tab() === 'deudas'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Deudas</button>
         <button (click)="tab.set('igv')" [class.bg-surface]="tab() === 'igv'" [class.shadow]="tab() === 'igv'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">IGV</button>
+        <button (click)="tab.set('asistencia')" [class.bg-surface]="tab() === 'asistencia'" [class.shadow]="tab() === 'asistencia'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Asistencia</button>
         <button (click)="tab.set('auditoria')" [class.bg-surface]="tab() === 'auditoria'" [class.shadow]="tab() === 'auditoria'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Auditoría</button>
         <button (click)="tab.set('sistema')" [class.bg-surface]="tab() === 'sistema'" [class.shadow]="tab() === 'sistema'" class="shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium">Sistema</button>
       </div>
@@ -233,6 +234,56 @@ import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
         </div>
       }
 
+      @if (tab() === 'asistencia') {
+        <div class="panel p-4 sm:p-5">
+          <div class="flex flex-wrap items-end gap-3">
+            <div>
+              <label class="text-xs font-medium text-ink-500">Desde</label>
+              <input type="date" [(ngModel)]="asistenciaDesde" name="asistenciaDesde" class="mt-1 block rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-ink-500">Hasta</label>
+              <input type="date" [(ngModel)]="asistenciaHasta" name="asistenciaHasta" class="mt-1 block rounded-lg border border-ink-100 px-3 py-2 text-sm" />
+            </div>
+            <button (click)="cargarAsistenciaAdmin()" [disabled]="cargandoAsistencia()" class="px-4 py-2 rounded-lg bg-navy-700 hover:bg-navy-900 disabled:opacity-50 text-white text-sm font-medium">
+              {{ cargandoAsistencia() ? 'Cargando...' : 'Filtrar' }}
+            </button>
+          </div>
+          <p class="text-xs text-ink-400 mt-2">Sin filtro, se muestra el mes calendario actual.</p>
+        </div>
+
+        <div class="panel overflow-x-auto mt-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-ink-500 border-b border-ink-100">
+                <th class="py-2.5 px-4 font-medium">Fecha</th>
+                <th class="py-2.5 px-4 font-medium">Usuario</th>
+                <th class="py-2.5 px-4 font-medium">Rol</th>
+                <th class="py-2.5 px-4 font-medium">Llegada</th>
+                <th class="py-2.5 px-4 font-medium">Inicio almuerzo</th>
+                <th class="py-2.5 px-4 font-medium">Fin almuerzo</th>
+                <th class="py-2.5 px-4 font-medium">Salida</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of asistenciaAdmin(); track r.id) {
+                <tr class="border-b border-ink-50">
+                  <td class="py-3 px-4 text-ink-500">{{ r.fecha }}</td>
+                  <td class="py-3 px-4 text-ink-900">{{ r.nombreUsuario }}</td>
+                  <td class="py-3 px-4 text-ink-500">{{ nombreRol(r.rolUsuario) }}</td>
+                  <td class="py-3 px-4" [class]="r.horaLlegada ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaLlegada?.slice(0,5) ?? '—' }}</td>
+                  <td class="py-3 px-4" [class]="r.horaInicioAlmuerzo ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaInicioAlmuerzo?.slice(0,5) ?? '—' }}</td>
+                  <td class="py-3 px-4" [class]="r.horaFinAlmuerzo ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaFinAlmuerzo?.slice(0,5) ?? '—' }}</td>
+                  <td class="py-3 px-4" [class]="r.horaSalida ? 'text-emerald-600 font-medium' : 'text-ink-300'">{{ r.horaSalida?.slice(0,5) ?? '—' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="py-8 text-center text-ink-500">Sin registros de asistencia en el rango seleccionado.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
       @if (tab() === 'auditoria') {
         <div class="panel overflow-x-auto">
           <table class="w-full text-sm">
@@ -346,7 +397,7 @@ import { Deuda, ResumenIgv, Rol, TipoDeuda } from '../../core/models/models';
   `
 })
 export class AdministracionComponent implements OnInit {
-  tab = signal<'usuarios' | 'deudas' | 'igv' | 'auditoria' | 'sistema'>('usuarios');
+  tab = signal<'usuarios' | 'deudas' | 'igv' | 'asistencia' | 'auditoria' | 'sistema'>('usuarios');
   roles: Rol[] = ['recepcion', 'mecanico', 'almacen', 'administracion'];
   nuevo: { nombre: string; usuario: string; rol: Rol | ''; email: string } = { nombre: '', usuario: '', rol: '', email: '' };
 
@@ -367,12 +418,28 @@ export class AdministracionComponent implements OnInit {
     nombre: '', descripcion: '', montoOriginal: null, fechaVencimiento: ''
   };
 
+  // ---------- Asistencia ----------
+  asistenciaAdmin = signal<RegistroAsistenciaAdmin[]>([]);
+  cargandoAsistencia = signal(false);
+  asistenciaDesde = '';
+  asistenciaHasta = '';
+
   constructor(public store: StoreService) {}
 
   ngOnInit(): void {
     this.store.cargarDeudas();
     this.store.cargarCompras();
     this.cargarResumenIgv();
+    this.cargarAsistenciaAdmin();
+  }
+
+  async cargarAsistenciaAdmin(): Promise<void> {
+    this.cargandoAsistencia.set(true);
+    try {
+      this.asistenciaAdmin.set(await this.store.listarAsistenciaAdmin(this.asistenciaDesde || undefined, this.asistenciaHasta || undefined));
+    } finally {
+      this.cargandoAsistencia.set(false);
+    }
   }
 
   // ---------- IGV ----------
@@ -439,8 +506,8 @@ export class AdministracionComponent implements OnInit {
     await this.store.abonarDeuda(d.id, monto);
   }
 
-  nombreRol(rol: Rol): string {
-    return NOMBRE_ROL[rol];
+  nombreRol(rol: Rol | string): string {
+    return (NOMBRE_ROL as Record<string, string>)[rol] ?? rol;
   }
 
   rolQueRequiereEmail(): boolean {

@@ -319,6 +319,18 @@ export interface RegistroAsistencia {
   creadoEn: string;
 }
 
+export interface RegistroAsistenciaAdmin {
+  id: string;
+  usuarioId: string;
+  nombreUsuario: string;
+  rolUsuario: string;
+  fecha: string;
+  horaLlegada: string | null;
+  horaInicioAlmuerzo: string | null;
+  horaFinAlmuerzo: string | null;
+  horaSalida: string | null;
+}
+
 // ---------- Ofertas (combos de productos) ----------
 export interface ItemOferta {
   productoId: string;
